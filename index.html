@@ -1,0 +1,3034 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Model Is Not the Product -- AI Harnesses and Frontier Models | cyberdaemon.ai</title>
+  <meta name="description" content="An educational guide to AI harnesses, frontier models, context windows, benchmark saturation, and the agent-to-agent trust gap. cyberdaemon.ai." />
+  <meta name="author" content="cyberdaemon.ai" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="The Model Is Not the Product" />
+  <meta property="og:description" content="The harness is where intelligence actually lives. A technical explainer on AI harnesses, frontier models, and what actually determines production AI quality." />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://cyberdaemon.ai/harness-explainer" />
+
+  <style>
+    /* ============================================================
+       RESET + BASE
+    ============================================================ */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg-base:          #0b0d0f;
+      --bg-surface:       #111418;
+      --bg-card:          #161b20;
+      --bg-card-hover:    #1c2229;
+      --bg-code:          #0e1114;
+      --border:           #1f2730;
+      --border-light:     #2a3540;
+      --accent:           #4a9eff;
+      --accent-dim:       #2a6eb5;
+      --accent-glow:      rgba(74, 158, 255, 0.10);
+      --accent-indigo:    #7c6af7;
+      --accent-green:     #3dba72;
+      --accent-blue:      #3b9de8;
+      --accent-orange:    #e8803b;
+      --text-primary:     #e8edf3;
+      --text-secondary:   #8fa0b2;
+      --text-muted:       #4e5e6e;
+      --text-code:        #a8d4ff;
+      --serif:            Georgia, 'Times New Roman', serif;
+      --sans:             -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --mono:             'Courier New', Courier, monospace;
+      --radius:           6px;
+      --radius-lg:        12px;
+      --max-width:        880px;
+      --section-gap:      5.5rem;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-primary);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.75;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ============================================================
+       TYPOGRAPHY
+    ============================================================ */
+    h1, h2, h3 {
+      font-family: var(--serif);
+      line-height: 1.2;
+      color: var(--text-primary);
+    }
+
+    h4 {
+      font-family: var(--sans);
+      line-height: 1.3;
+      color: var(--text-primary);
+    }
+
+    h1 { font-size: clamp(2.2rem, 5.5vw, 3.4rem); font-weight: 700; }
+    h2 { font-size: clamp(1.55rem, 3.5vw, 2.15rem); font-weight: 700; }
+    h3 { font-size: clamp(1.1rem, 2.5vw, 1.35rem); font-weight: 700; }
+    h4 { font-size: 0.95rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-secondary); }
+
+    p { margin-bottom: 1rem; color: var(--text-secondary); }
+    p:last-child { margin-bottom: 0; }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover { text-decoration: underline; }
+
+    strong { color: var(--text-primary); font-weight: 600; }
+
+    code {
+      font-family: var(--mono);
+      font-size: 0.84em;
+      color: var(--text-code);
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      padding: 0.1em 0.4em;
+      border-radius: 3px;
+    }
+
+    ul, ol {
+      padding-left: 1.5rem;
+      color: var(--text-secondary);
+    }
+
+    li { margin-bottom: 0.35rem; }
+
+    /* ============================================================
+       LAYOUT
+    ============================================================ */
+    .container {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 0 1.75rem;
+    }
+
+    section {
+      padding: var(--section-gap) 0;
+      border-top: 1px solid var(--border);
+    }
+
+    section:first-of-type {
+      border-top: none;
+    }
+
+    /* ============================================================
+       SECTION HEADERS -- numbered label style
+    ============================================================ */
+    .section-number {
+      display: block;
+      font-family: var(--sans);
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      font-variant: small-caps;
+      color: var(--accent);
+      margin-bottom: 0.55rem;
+    }
+
+    .section-title {
+      text-align: left;
+      margin-bottom: 1rem;
+    }
+
+    .section-title-line {
+      display: block;
+      width: 2.5rem;
+      height: 2px;
+      background: var(--accent);
+      margin-top: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .section-intro {
+      font-size: 1.05rem;
+      color: var(--text-secondary);
+      margin-bottom: 2.5rem;
+      max-width: 700px;
+      line-height: 1.75;
+    }
+
+    /* ============================================================
+       NAV
+    ============================================================ */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(11, 13, 15, 0.92);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      padding: 0.75rem 0;
+    }
+
+    .nav-inner {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 0 1.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .nav-brand {
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .nav-brand span {
+      color: var(--accent);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 0.1rem;
+      list-style: none;
+      padding: 0;
+      flex-wrap: wrap;
+    }
+
+    .nav-links a {
+      font-family: var(--sans);
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-variant: small-caps;
+      color: var(--text-muted);
+      padding: 0.3rem 0.65rem;
+      border-radius: var(--radius);
+      transition: color 0.15s, background 0.15s;
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+    }
+
+    .nav-links a:hover {
+      color: var(--text-primary);
+      border-bottom-color: var(--accent);
+      text-decoration: none;
+    }
+
+    /* ============================================================
+       HERO
+    ============================================================ */
+    #hero {
+      border-top: none;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+      background-color: var(--bg-base);
+      background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      padding: 7rem 0 6rem;
+    }
+
+    #hero::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 50% 30%, rgba(74, 158, 255, 0.07) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 30% at 80% 70%, rgba(124, 106, 247, 0.04) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-eyebrow {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1.5rem;
+      display: block;
+    }
+
+    .hero-title {
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.025em;
+    }
+
+    .hero-title em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .hero-accent-line {
+      display: block;
+      width: 3.5rem;
+      height: 2px;
+      background: var(--accent);
+      margin: 1.25rem 0 1.75rem;
+    }
+
+    .hero-subtitle {
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      max-width: 620px;
+      margin-bottom: 2.25rem;
+      line-height: 1.7;
+    }
+
+    /* Learning tier badges */
+    .tier-badges {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 2.25rem;
+    }
+
+    .tier-badge {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--accent);
+      background: transparent;
+      border: 1px solid rgba(74, 158, 255, 0.4);
+      border-radius: 20px;
+      padding: 0.2rem 0.75rem;
+      letter-spacing: 0.04em;
+    }
+
+    .hero-meta {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .hero-meta-item {
+      font-family: var(--mono);
+      font-size: 0.73rem;
+      color: var(--text-muted);
+    }
+
+    .hero-meta-item span {
+      color: var(--text-secondary);
+    }
+
+    /* ============================================================
+       PULL QUOTES
+    ============================================================ */
+    .pull-quote {
+      margin: 2.75rem 0;
+      padding: 1.5rem 2rem;
+      border-left: 3px solid var(--accent);
+      background: transparent;
+    }
+
+    .pull-quote p {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 1.25rem;
+      line-height: 1.55;
+      color: var(--accent);
+      text-align: center;
+      margin: 0;
+    }
+
+    /* ============================================================
+       CARDS
+    ============================================================ */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .card:hover {
+      border-color: var(--border-light);
+      background: var(--bg-card-hover);
+    }
+
+    .card-icon {
+      font-size: 1.4rem;
+      margin-bottom: 0.75rem;
+      display: block;
+    }
+
+    .card-title {
+      font-family: var(--sans);
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+
+    .card-body {
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      line-height: 1.65;
+    }
+
+    .card-body p { font-size: 0.88rem; margin-bottom: 0.5rem; }
+    .card-body p:last-child { margin-bottom: 0; }
+
+    .card-tag {
+      display: inline-block;
+      margin-top: 0.75rem;
+      font-family: var(--mono);
+      font-size: 0.69rem;
+      color: var(--accent);
+      background: var(--accent-glow);
+      border: 1px solid rgba(74, 158, 255, 0.2);
+      border-radius: 3px;
+      padding: 0.15em 0.5em;
+    }
+
+    /* ============================================================
+       ASCII DIAGRAM
+    ============================================================ */
+    .diagram-wrapper {
+      margin: 2.5rem 0;
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .diagram-header {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 0.6rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .diagram-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--border-light);
+    }
+
+    .diagram-header-label {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-left: 0.25rem;
+    }
+
+    .diagram-body {
+      padding: 1.5rem;
+      overflow-x: auto;
+    }
+
+    pre {
+      font-family: var(--mono);
+      font-size: 0.77rem;
+      line-height: 1.55;
+      color: var(--text-code);
+      white-space: pre;
+      margin: 0;
+    }
+
+    /* ============================================================
+       PIPELINE STAGES (VVAH) -- vertical flow diagram
+    ============================================================ */
+    .pipeline {
+      margin-top: 2.5rem;
+      position: relative;
+    }
+
+    .pipeline-stage {
+      display: grid;
+      grid-template-columns: 3.2rem 1fr;
+      gap: 0 1.4rem;
+      margin-bottom: 0;
+      align-items: stretch;
+    }
+
+    .pipeline-stage:last-child .stage-line {
+      display: none;
+    }
+
+    .stage-left {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .stage-badge {
+      width: 2.6rem;
+      height: 2.6rem;
+      border-radius: 50%;
+      background: var(--bg-card);
+      border: 2px solid var(--border-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--accent);
+      flex-shrink: 0;
+      z-index: 1;
+      letter-spacing: 0.02em;
+    }
+
+    .stage-badge.highlight {
+      border-color: var(--accent);
+      background: var(--accent-glow);
+      box-shadow: 0 0 0 4px rgba(74, 158, 255, 0.08);
+    }
+
+    .stage-line {
+      width: 2px;
+      flex: 1;
+      background: var(--border);
+      margin: 0.3rem 0;
+      min-height: 1.25rem;
+    }
+
+    .stage-right {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      margin-bottom: 0.9rem;
+    }
+
+    .stage-right.highlight {
+      border-color: rgba(74, 158, 255, 0.35);
+      background: rgba(74, 158, 255, 0.06);
+      box-shadow: inset 0 0 0 1px rgba(74, 158, 255, 0.12);
+    }
+
+    .stage-name {
+      font-family: var(--sans);
+      font-weight: 600;
+      font-size: 0.92rem;
+      color: var(--text-primary);
+      margin-bottom: 0.3rem;
+    }
+
+    .stage-desc {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* ============================================================
+       TABLE -- company-accented rows
+    ============================================================ */
+    .table-wrapper {
+      overflow-x: auto;
+      margin-top: 2rem;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+    }
+
+    .table-wrapper.sticky-head thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.87rem;
+    }
+
+    thead {
+      background: var(--bg-card);
+    }
+
+    thead th {
+      padding: 0.85rem 1rem;
+      text-align: left;
+      font-family: var(--mono);
+      font-size: 0.69rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+      background: var(--bg-card);
+    }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+
+    tbody tr:last-child {
+      border-bottom: none;
+    }
+
+    tbody tr:hover {
+      background: var(--bg-card);
+    }
+
+    tbody td {
+      padding: 0.85rem 1rem;
+      color: var(--text-secondary);
+      vertical-align: top;
+    }
+
+    tbody td:first-child {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    /* Company row accents */
+    tr.row-anthropic {
+      border-left: 3px solid var(--accent-indigo);
+    }
+
+    tr.row-openai {
+      border-left: 3px solid var(--accent-green);
+    }
+
+    tr.row-google {
+      border-left: 3px solid var(--accent-blue);
+    }
+
+    tr.row-open {
+      border-left: 3px solid var(--accent-orange);
+    }
+
+    tr.row-anthropic td:first-child { color: var(--accent-indigo); }
+    tr.row-openai td:first-child { color: var(--accent-green); }
+    tr.row-google td:first-child { color: var(--accent-blue); }
+    tr.row-open td:first-child { color: var(--accent-orange); }
+
+    .tag-open {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 0.67rem;
+      color: var(--accent-orange);
+      background: rgba(232, 128, 59, 0.09);
+      border: 1px solid rgba(232, 128, 59, 0.25);
+      border-radius: 3px;
+      padding: 0.1em 0.45em;
+    }
+
+    .tag-closed {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 0.67rem;
+      color: var(--accent);
+      background: var(--accent-glow);
+      border: 1px solid rgba(74, 158, 255, 0.22);
+      border-radius: 3px;
+      padding: 0.1em 0.45em;
+    }
+
+    /* ============================================================
+       CALLOUT BOXES
+    ============================================================ */
+    .callout {
+      margin: 2rem 0;
+      padding: 1.25rem 1.5rem;
+      border-radius: var(--radius);
+      border-left: 3px solid var(--accent);
+      background: var(--accent-glow);
+    }
+
+    .callout p {
+      font-size: 0.96rem;
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    .callout-label {
+      font-family: var(--mono);
+      font-size: 0.67rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+
+    .callout-warn {
+      border-left-color: #f59e0b;
+      background: rgba(245, 158, 11, 0.06);
+    }
+
+    .callout-warn .callout-label {
+      color: #f59e0b;
+    }
+
+    /* ============================================================
+       BENCHMARK CARDS
+    ============================================================ */
+    .benchmark-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(225px, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .benchmark-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.3rem;
+    }
+
+    .benchmark-name {
+      font-family: var(--sans);
+      font-weight: 700;
+      font-size: 0.92rem;
+      color: var(--text-primary);
+      margin-bottom: 0.2rem;
+    }
+
+    .benchmark-full {
+      font-size: 0.77rem;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+      font-style: italic;
+    }
+
+    .benchmark-stat {
+      font-family: var(--mono);
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 0.4rem;
+    }
+
+    .benchmark-desc {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      line-height: 1.55;
+    }
+
+    /* ============================================================
+       TWO-COL COMPARE
+    ============================================================ */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    @media (max-width: 640px) {
+      .two-col { grid-template-columns: 1fr; }
+    }
+
+    .compare-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+    }
+
+    .compare-card h3 {
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .compare-card > p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .compare-card ul {
+      font-size: 0.87rem;
+      padding-left: 1.25rem;
+      color: var(--text-secondary);
+    }
+
+    .compare-card li {
+      margin-bottom: 0.4rem;
+    }
+
+    /* ============================================================
+       STAT ROW
+    ============================================================ */
+    .stat-row {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      margin: 2rem 0;
+      padding: 1.75rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+    }
+
+    .stat-item {
+      flex: 1;
+      min-width: 140px;
+    }
+
+    .stat-value {
+      font-family: var(--serif);
+      font-size: 2.1rem;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+      margin-bottom: 0.4rem;
+    }
+
+    .stat-label {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      line-height: 1.45;
+    }
+
+    /* ============================================================
+       FRONTIER MODEL EXPLAINER (new section)
+    ============================================================ */
+    .fm-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 1rem;
+      margin: 2rem 0;
+    }
+
+    .fm-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.4rem;
+    }
+
+    .fm-card-label {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.4rem;
+      display: block;
+    }
+
+    .fm-card-title {
+      font-family: var(--serif);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .fm-card-body {
+      font-size: 0.86rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* ============================================================
+       FOOTER
+    ============================================================ */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 3rem 0;
+      margin-top: 2rem;
+    }
+
+    .footer-inner {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 0 1.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .footer-author {
+      font-family: var(--serif);
+      font-size: 1rem;
+      color: var(--text-primary);
+    }
+
+    .footer-disclaimer {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      max-width: 580px;
+      line-height: 1.55;
+    }
+
+    .footer-link {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--accent);
+    }
+
+    /* ============================================================
+       RESPONSIVE
+    ============================================================ */
+    @media (max-width: 600px) {
+      .card-grid { grid-template-columns: 1fr; }
+      .hero-meta { flex-direction: column; gap: 0.5rem; }
+      .nav-links { display: none; }
+      .stat-row { flex-direction: column; }
+      .tier-badges { gap: 0.4rem; }
+    }
+
+    @media (max-width: 760px) {
+      .benchmark-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 480px) {
+      .benchmark-grid { grid-template-columns: 1fr; }
+      .fm-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ============================================================
+       SCROLL FADE
+    ============================================================ */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(14px);
+      transition: opacity 0.45s ease, transform 0.45s ease;
+    }
+
+    .fade-in.visible {
+      opacity: 1;
+      transform: none;
+    }
+
+    /* Utility */
+    .mt-sm  { margin-top: 1rem; }
+    .mt-md  { margin-top: 1.5rem; }
+    .mt-lg  { margin-top: 2rem; }
+    .mt-xl  { margin-top: 2.5rem; }
+    .mb-sm  { margin-bottom: 0.75rem; }
+    .mb-md  { margin-bottom: 1rem; }
+
+    /* ============================================================
+       BODY TEXT COLOR FIX
+    ============================================================ */
+    body { color: #e6edf3; }
+    p { color: #e6edf3; }
+    li { color: #e6edf3; }
+    .section-intro { color: #c9d3de; }
+    .stage-desc { color: #c9d3de; }
+    .card-body { color: #c9d3de; }
+    .card-body p { color: #c9d3de; }
+    .benchmark-desc { color: #c9d3de; }
+    .fm-card-body { color: #c9d3de; }
+    .compare-card ul { color: #c9d3de; }
+    .stat-label { color: #c9d3de; }
+    .arch-note { color: #c9d3de; }
+
+    /* ============================================================
+       SVG DIAGRAMS
+    ============================================================ */
+    .svg-diagram-wrapper {
+      margin: 2.5rem 0;
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .svg-diagram-header {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 0.6rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .svg-diagram-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--border-light);
+    }
+
+    .svg-diagram-label {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-left: 0.25rem;
+    }
+
+    .svg-diagram-body {
+      padding: 1.5rem;
+      overflow-x: auto;
+      display: flex;
+      justify-content: center;
+    }
+
+    .svg-diagram-body svg {
+      max-width: 100%;
+      height: auto;
+    }
+
+    /* ============================================================
+       VVAH SVG PIPELINE
+    ============================================================ */
+    .vvah-svg-wrap {
+      margin: 2.5rem 0;
+      overflow-x: auto;
+    }
+
+    /* ============================================================
+       INTERACTIVE TOOLS — SHARED
+    ============================================================ */
+    .tool-section {
+      padding: var(--section-gap) 0;
+      border-top: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(74,158,255,0.03) 0%, transparent 60%);
+    }
+
+    .tool-section .container {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 0 1.75rem;
+    }
+
+    /* ============================================================
+       EVAL LEVEL WIZARD
+    ============================================================ */
+    #eval-wizard {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin-top: 2rem;
+    }
+
+    .wizard-header {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 1.25rem 1.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .wizard-title {
+      font-family: var(--sans);
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .wizard-progress {
+      display: flex;
+      gap: 0.4rem;
+      align-items: center;
+    }
+
+    .progress-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--border-light);
+      transition: background 0.2s;
+    }
+
+    .progress-dot.active {
+      background: var(--accent);
+    }
+
+    .progress-dot.done {
+      background: var(--accent-green);
+    }
+
+    .wizard-body {
+      padding: 1.75rem;
+    }
+
+    .wizard-question {
+      display: none;
+    }
+
+    .wizard-question.active {
+      display: block;
+    }
+
+    .wizard-q-label {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.6rem;
+      display: block;
+    }
+
+    .wizard-q-text {
+      font-family: var(--serif);
+      font-size: 1.15rem;
+      color: var(--text-primary);
+      margin-bottom: 1.25rem;
+      line-height: 1.4;
+    }
+
+    .wizard-options {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .wizard-option {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.85rem 1.15rem;
+      font-size: 0.9rem;
+      color: #e6edf3;
+      cursor: pointer;
+      text-align: left;
+      transition: border-color 0.15s, background 0.15s;
+      font-family: var(--sans);
+    }
+
+    .wizard-option:hover {
+      border-color: var(--accent);
+      background: var(--bg-card-hover);
+    }
+
+    .wizard-option.selected {
+      border-color: var(--accent);
+      background: rgba(74,158,255,0.08);
+      color: var(--text-primary);
+    }
+
+    .wizard-nav {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1.5rem;
+      align-items: center;
+    }
+
+    .wizard-btn {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.55rem 1.25rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--accent);
+      background: transparent;
+      color: var(--accent);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .wizard-btn:hover {
+      background: var(--accent);
+      color: #0b0d0f;
+    }
+
+    .wizard-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .wizard-btn-back {
+      border-color: var(--border-light);
+      color: var(--text-muted);
+    }
+
+    .wizard-btn-back:hover {
+      background: var(--bg-card);
+      color: var(--text-primary);
+    }
+
+    .wizard-result {
+      display: none;
+      padding: 1.75rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .wizard-result.active {
+      display: block;
+    }
+
+    .result-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      letter-spacing: 0.1em;
+      font-weight: 700;
+      padding: 0.4rem 1rem;
+      border-radius: 20px;
+      border: 1.5px solid var(--accent);
+      color: var(--accent);
+      margin-bottom: 1.25rem;
+    }
+
+    .result-badge.level-200 { border-color: var(--accent-green); color: var(--accent-green); }
+    .result-badge.level-300 { border-color: var(--accent); color: var(--accent); }
+    .result-badge.level-400 { border-color: var(--accent-indigo); color: var(--accent-indigo); }
+
+    .result-title {
+      font-family: var(--serif);
+      font-size: 1.2rem;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+    }
+
+    .result-desc {
+      font-size: 0.9rem;
+      color: #c9d3de;
+      margin-bottom: 1.25rem;
+      line-height: 1.65;
+    }
+
+    .result-reads {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .result-reads-label {
+      font-family: var(--mono);
+      font-size: 0.67rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.6rem;
+      display: block;
+    }
+
+    .result-reads ol {
+      color: #e6edf3;
+      font-size: 0.87rem;
+      padding-left: 1.25rem;
+    }
+
+    .result-reads li {
+      margin-bottom: 0.3rem;
+      color: #e6edf3;
+    }
+
+    .result-next {
+      font-size: 0.85rem;
+      color: #c9d3de;
+      border-left: 2px solid var(--border-light);
+      padding-left: 1rem;
+    }
+
+    .wizard-restart {
+      margin-top: 1.25rem;
+    }
+
+    /* ============================================================
+       HARNESS BUILDER CHECKLIST
+    ============================================================ */
+    #harness-builder {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin-top: 2rem;
+    }
+
+    .builder-header {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 1.25rem 1.75rem;
+    }
+
+    .builder-title {
+      font-family: var(--sans);
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .builder-subtitle {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    .builder-body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+    }
+
+    @media (max-width: 680px) {
+      .builder-body { grid-template-columns: 1fr; }
+    }
+
+    .builder-checks {
+      padding: 1.5rem 1.75rem;
+      border-right: 1px solid var(--border);
+    }
+
+    @media (max-width: 680px) {
+      .builder-checks { border-right: none; border-bottom: 1px solid var(--border); }
+    }
+
+    .builder-check-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid var(--border-light);
+      cursor: pointer;
+    }
+
+    .builder-check-item:last-child {
+      border-bottom: none;
+    }
+
+    .builder-checkbox {
+      width: 18px;
+      height: 18px;
+      border: 1.5px solid var(--border-light);
+      border-radius: 3px;
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .builder-check-item.checked .builder-checkbox {
+      border-color: var(--accent);
+      background: var(--accent);
+    }
+
+    .builder-checkbox-mark {
+      display: none;
+      color: #0b0d0f;
+      font-size: 0.7rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .builder-check-item.checked .builder-checkbox-mark {
+      display: block;
+    }
+
+    .builder-check-label {
+      font-size: 0.88rem;
+      color: #e6edf3;
+      line-height: 1.45;
+    }
+
+    .builder-result {
+      padding: 1.5rem 1.75rem;
+    }
+
+    .builder-result-label {
+      font-family: var(--mono);
+      font-size: 0.67rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.75rem;
+      display: block;
+    }
+
+    .builder-empty {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .builder-pattern {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.85rem 1rem;
+      margin-bottom: 0.6rem;
+      font-size: 0.85rem;
+    }
+
+    .builder-pattern-name {
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.25rem;
+    }
+
+    .builder-pattern-desc {
+      color: #c9d3de;
+      font-size: 0.82rem;
+      line-height: 1.5;
+    }
+
+    .builder-stack-card {
+      margin-top: 1.25rem;
+      background: rgba(74,158,255,0.06);
+      border: 1px solid rgba(74,158,255,0.25);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+    }
+
+    .builder-stack-label {
+      font-family: var(--mono);
+      font-size: 0.67rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.6rem;
+      display: block;
+    }
+
+    .builder-stack-list {
+      list-style: none;
+      padding: 0;
+    }
+
+    .builder-stack-list li {
+      font-size: 0.84rem;
+      color: #e6edf3;
+      padding: 0.25rem 0;
+      border-bottom: 1px solid rgba(74,158,255,0.12);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .builder-stack-list li:last-child { border-bottom: none; }
+
+    .stack-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+    }
+
+    /* ============================================================
+       CROSS-SITE NAV LINKS
+    ============================================================ */
+    .nav-family {
+      display: flex;
+      gap: 0.1rem;
+      list-style: none;
+      padding: 0;
+      border-left: 1px solid var(--border);
+      margin-left: 0.5rem;
+      padding-left: 0.5rem;
+    }
+
+    .nav-family a {
+      font-family: var(--sans);
+      font-size: 0.68rem;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 0.3rem 0.55rem;
+      border-radius: var(--radius);
+      transition: color 0.15s;
+      text-decoration: none;
+    }
+
+    .nav-family a:hover {
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    @media (max-width: 600px) {
+      .nav-family { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     NAV
+============================================================ -->
+<nav aria-label="Page navigation">
+  <div class="nav-inner">
+    <span class="nav-brand"><span>cyberdaemon</span>.ai</span>
+    <ul class="nav-links" role="list">
+      <li><a href="#what-is-harness">Harness</a></li>
+      <li><a href="#what-is-frontier">Frontier</a></li>
+      <li><a href="#vvah">VVAH</a></li>
+      <li><a href="#frontier-models">Models</a></li>
+      <li><a href="#benchmark-saturation">Benchmarks</a></li>
+      <li><a href="#reasoning-models">Reasoning</a></li>
+      <li><a href="#a2a-trust">A2A Trust</a></li>
+      <li><a href="#harness-outlasts">Why It Matters</a></li>
+      <li><a href="#eval-finder">Eval Finder</a></li>
+      <li><a href="#harness-builder-tool">Builder</a></li>
+    </ul>
+    <ul class="nav-family" role="list">
+      <li><a href="https://cyberdaemon.ai">cyberdaemon.ai</a></li>
+      <li><a href="https://identity.cyberdaemon.ai">identity</a></li>
+      <li><a href="https://cyberdaemon.ai/dira">DIRA</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- ============================================================
+     HERO
+============================================================ -->
+<section id="hero">
+  <div class="container">
+    <div class="hero-content">
+      <span class="hero-eyebrow">Educational Reference / AI Architecture</span>
+      <h1 class="hero-title">The Model Is<br><em>Not</em> the Product</h1>
+      <span class="hero-accent-line"></span>
+      <p class="hero-subtitle">
+        Every major AI product you interact with runs on top of a layer of engineering that does not get named in the press release.
+        That layer is the harness. The harness is where the intelligence actually lives.
+      </p>
+      <div class="tier-badges">
+        <span class="tier-badge">200 -- Concepts</span>
+        <span class="tier-badge">300 -- Architecture</span>
+        <span class="tier-badge">400 -- Research Gaps</span>
+      </div>
+      <div class="hero-meta">
+        <span class="hero-meta-item"><span>cyberdaemon.ai</span></span>
+        <span class="hero-meta-item">Published <span>June 2026</span></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     WHAT IS A HARNESS
+============================================================ -->
+<section id="what-is-harness">
+  <div class="container">
+    <span class="section-number">01 -- Foundation</span>
+    <h2 class="section-title">What a Harness Is</h2>
+    <span class="section-title-line"></span>
+    <p class="section-intro">
+      A language model is a stateless text transformer. It has no memory of your last message. It cannot call APIs.
+      It does not decide which model to use or when to stop. The harness does all of that.
+      Think of the harness as the operating system and the model as the CPU.
+    </p>
+
+    <div class="card-grid">
+
+      <div class="card fade-in">
+        <span class="card-icon">&#9881;</span>
+        <div class="card-title">Context Construction</div>
+        <div class="card-body">
+          <p>Everything the model sees at inference time is assembled before the API call. This includes the system prompt (the model's standing instructions), retrieved documents from a vector or hybrid search index (RAG), conversation history, injected tool results, and structured memory.</p>
+          <p>The model cannot distinguish between "background knowledge" and "what I just looked up." From its perspective, it is all text in a context window. The harness decides what goes in and in what order.</p>
+          <span class="card-tag">RAG / system prompt / memory</span>
+        </div>
+      </div>
+
+      <div class="card fade-in">
+        <span class="card-icon">&#128295;</span>
+        <div class="card-title">Tool and Action Layer</div>
+        <div class="card-body">
+          <p>Modern model APIs support function calling: the model can emit a structured JSON payload describing a tool it wants to invoke. The harness catches that output, executes the function (a database query, an API call, a code runner), and feeds the result back into the next context.</p>
+          <p>The model does not "run code." It describes code it wants run. The harness runs it. This distinction matters enormously for security design.</p>
+          <span class="card-tag">function calling / code execution</span>
+        </div>
+      </div>
+
+      <div class="card fade-in">
+        <span class="card-icon">&#128190;</span>
+        <div class="card-title">Memory and State</div>
+        <div class="card-body">
+          <p>A base language model is completely stateless. It has no memory between API calls. Every conversation starts fresh unless the harness explicitly reconstructs context.</p>
+          <p>The harness typically manages three memory tiers: short-term (in-window conversation history), long-term (external storage, written and retrieved by the harness), and episodic (structured records of past sessions surfaced selectively at retrieval time).</p>
+          <span class="card-tag">short-term / long-term / episodic</span>
+        </div>
+      </div>
+
+      <div class="card fade-in">
+        <span class="card-icon">&#8644;</span>
+        <div class="card-title">Routing and Fallbacks</div>
+        <div class="card-body">
+          <p>Production harnesses rarely call a single model. A routing layer selects the right model for each request based on task type, privacy requirements, cost constraints, and latency targets. Fast, cheap models handle classification and summarization. Slower, more capable models handle complex reasoning.</p>
+          <p>Fallback chains handle provider outages. Gateway layers like Portkey and LiteLLM provide unified interfaces across providers.</p>
+          <span class="card-tag">Portkey / LiteLLM / model selection</span>
+        </div>
+      </div>
+
+      <div class="card fade-in">
+        <span class="card-icon">&#128274;</span>
+        <div class="card-title">Safety and Authorization</div>
+        <div class="card-body">
+          <p>The harness is the primary control surface for AI safety in production. Intent classification gates which actions an agent is permitted to take. PII detection and tokenization prevent sensitive data from leaking into model context or logs.</p>
+          <p>Dual-Intent Runtime Authorization (DIRA) extends this by requiring that an agent's declared intent at request time matches its actual behavior at execution time, creating a cryptographic accountability layer for agentic workloads.</p>
+          <span class="card-tag">DIRA / intent classification / PII</span>
+        </div>
+      </div>
+
+      <div class="card fade-in">
+        <span class="card-icon">&#128202;</span>
+        <div class="card-title">Observability</div>
+        <div class="card-body">
+          <p>Production AI systems require the same observability discipline as any distributed service, with additional requirements unique to nondeterministic systems. Every model call should be traced: prompt, response, latency, cost, token count, and tool invocations.</p>
+          <p>Behavioral Drift Detection (BDD) extends classical observability by identifying when a model's response patterns shift over time, whether from model updates, prompt changes, or data distribution shift, before those shifts cause silent failures in downstream systems.</p>
+          <span class="card-tag">Langfuse / trace logging / BDD</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SVG Architecture Diagram -->
+    <div class="svg-diagram-wrapper fade-in">
+      <div class="svg-diagram-header">
+        <div class="svg-diagram-dot"></div>
+        <div class="svg-diagram-dot"></div>
+        <div class="svg-diagram-dot"></div>
+        <span class="svg-diagram-label">harness-architecture.svg</span>
+      </div>
+      <div class="svg-diagram-body">
+        <svg viewBox="0 0 760 920" width="760" height="920" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="AI Harness Architecture diagram showing data flow from user through safety gate, context construction, routing, model inference, tool execution, and observability layers">
+          <defs>
+            <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L8,3 z" fill="#4a9eff"/>
+            </marker>
+            <marker id="arr-split" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L8,3 z" fill="#2a5580"/>
+            </marker>
+          </defs>
+
+          <!-- USER INPUT -->
+          <rect x="80" y="10" width="600" height="54" rx="6" fill="#161b20" stroke="#4a9eff" stroke-width="1.5"/>
+          <text x="380" y="32" text-anchor="middle" font-family="'Courier New',monospace" font-size="9" fill="#4a9eff" letter-spacing="0.14em" text-transform="uppercase">USER / CLIENT APPLICATION</text>
+          <text x="380" y="52" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#c9d3de">request: natural language or structured</text>
+
+          <!-- arrow -->
+          <line x1="380" y1="64" x2="380" y2="88" stroke="#4a9eff" stroke-width="1.5" marker-end="url(#arr)"/>
+
+          <!-- SAFETY GATE -->
+          <rect x="80" y="90" width="600" height="72" rx="6" fill="#161b20" stroke="#7c6af7" stroke-width="1.5"/>
+          <text x="380" y="110" text-anchor="middle" font-family="'Courier New',monospace" font-size="9" fill="#7c6af7" letter-spacing="0.14em">SAFETY GATE (pre-flight)</text>
+          <text x="230" y="133" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#c9d3de">intent classification</text>
+          <text x="380" y="133" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#4e5e6e">|</text>
+          <text x="530" y="133" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#c9d3de">PII scrub</text>
+          <text x="380" y="152" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#c9d3de">DIRA declared-intent registration</text>
+
+          <!-- arrow -->
+          <line x1="380" y1="162" x2="380" y2="186" stroke="#4a9eff" stroke-width="1.5" marker-end="url(#arr)"/>
+
+          <!-- CONTEXT CONSTRUCTION -->
+          <rect x="80" y="188" width="600" height="90" rx="6" fill="#161b20" stroke="#3dba72" stroke-width="1.5"/>
+          <text x="380" y="208" text-anchor="middle" font-family="'Courier New',monospace" font-size="9" fill="#3dba72" letter-spacing="0.14em">CONTEXT CONSTRUCTION LAYER</text>
+          <rect x="104" y="218" width="160" height="22" rx="3" fill="#1c2229" stroke="#1f2730"/>
+          <text x="184" y="233" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#c9d3de">system prompt</text>
+          <rect x="278" y="218" width="160" height="22" rx="3" fill="#1c2229" stroke="#1f2730"/>
+          <text x="358" y="233" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#c9d3de">memory retrieval</text>
+          <rect x="452" y="218" width="160" height="22" rx="3" fill="#1c2229" stroke="#1f2730"/>
+          <text x="532" y="233" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#c9d3de">RAG search</text>
+          <rect x="104" y="248" width="160" height="22" rx="3" fill="#1c2229" stroke="#1f2730"/>
+          <text x="184" y="263" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#c9d3de">conversation history</text>
+          <rect x="278" y="248" width="160" height="22" rx="3" fill="#1c2229" stroke="#1f2730"/>
+          <text x="358" y="263" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#c9d3de">tool manifests</text>
+          <rect x="452" y="248" width="160" height="22" rx="3" fill="#1c2229" stroke="#1f2730"/>
+          <text x="532" y="263" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#c9d3de">structured metadata</text>
+
+          <!-- arrow -->
+          <line x1="380" y1="278" x2="380" y2="302" stroke="#4a9eff" stroke-width="1.5" marker-end="url(#arr)"/>
+
+          <!-- ROUTING LAYER -->
+          <rect x="80" y="304" width="600" height="84" rx="6" fill="#161b20" stroke="#e8803b" stroke-width="1.5"/>
+          <text x="380" y="324" text-anchor="middle" font-family="'Courier New',monospace" font-size="9" fill="#e8803b" letter-spacing="0.14em">ROUTING LAYER</text>
+          <text x="380" y="347" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#c9d3de">task type fingerprint</text>
+          <text x="250" y="366" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#c9d3de">privacy signal → local model</text>
+          <text x="520" y="366" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#c9d3de">complexity → frontier API</text>
+          <text x="380" y="380" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#4e5e6e">fallback chain: Portkey / LiteLLM</text>
+
+          <!-- split arrows -->
+          <line x1="230" y1="388" x2="230" y2="408" stroke="#4a9eff" stroke-width="1.5"/>
+          <line x1="530" y1="388" x2="530" y2="408" stroke="#4a9eff" stroke-width="1.5"/>
+          <line x1="230" y1="388" x2="530" y2="388" stroke="#4a9eff" stroke-width="1.5"/>
+          <line x1="230" y1="408" x2="230" y2="424" stroke="#4a9eff" stroke-width="1.5" marker-end="url(#arr)"/>
+          <line x1="530" y1="408" x2="530" y2="424" stroke="#4a9eff" stroke-width="1.5" marker-end="url(#arr)"/>
+
+          <!-- LOCAL INFERENCE -->
+          <rect x="80" y="426" width="280" height="66" rx="6" fill="#161b20" stroke="#1f2730" stroke-width="1.5"/>
+          <text x="220" y="448" text-anchor="middle" font-family="'Courier New',monospace" font-size="9" fill="#4a9eff" letter-spacing="0.1em">LOCAL INFERENCE</text>
+          <text x="220" y="468" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#c9d3de">llama3.3 70B / Ollama / vLLM</text>
+          <text x="220" y="483" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#4e5e6e">data stays in environment</text>
+
+          <!-- FRONTIER API -->
+          <rect x="400" y="426" width="280" height="66" rx="6" fill="#161b20" stroke="#1f2730" stroke-width="1.5"/>
+          <text x="540" y="448" text-anchor="middle" font-family="'Courier New',monospace" font-size="9" fill="#4a9eff" letter-spacing="0.1em">FRONTIER API</text>
+          <text x="540" y="468" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#c9d3de">Claude / GPT-4o / Gemini 2.5</text>
+          <text x="540" y="483" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#4e5e6e">provider-managed inference</text>
+
+          <!-- merge arrows -->
+          <line x1="220" y1="492" x2="220" y2="512" stroke="#4a9eff" stroke-width="1.5"/>
+          <line x1="540" y1="492" x2="540" y2="512" stroke="#4a9eff" stroke-width="1.5"/>
+          <line x1="220" y1="512" x2="540" y2="512" stroke="#4a9eff" stroke-width="1.5"/>
+          <line x1="380" y1="512" x2="380" y2="530" stroke="#4a9eff" stroke-width="1.5" marker-end="url(#arr)"/>
+
+          <!-- MODEL RESPONSE -->
+          <rect x="80" y="532" width="600" height="52" rx="6" fill="#161b20" stroke="#1f2730" stroke-width="1.5"/>
+          <text x="380" y="552" text-anchor="middle" font-family="'Courier New',monospace" font-size="9" fill="#8fa0b2" letter-spacing="0.14em">MODEL RESPONSE</text>
+          <text x="240" y="574" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#c9d3de">text output</text>
+          <text x="380" y="574" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#4e5e6e">|</text>
+          <text x="520" y="574" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#c9d3de">tool call (JSON)</text>
+
+          <!-- branch arrows -->
+          <line x1="220" y1="584" x2="220" y2="604" stroke="#4a9eff" stroke-width="1.5"/>
+          <line x1="540" y1="584" x2="540" y2="604" stroke="#4a9eff" stroke-width="1.5"/>
+          <line x1="220" y1="584" x2="540" y2="584" stroke="#4a9eff" stroke-width="1.5"/>
+          <line x1="220" y1="604" x2="220" y2="620" stroke="#4a9eff" stroke-width="1.5" marker-end="url(#arr)"/>
+          <line x1="540" y1="604" x2="540" y2="620" stroke="#4a9eff" stroke-width="1.5" marker-end="url(#arr)"/>
+
+          <!-- TEXT FINAL -->
+          <rect x="80" y="622" width="265" height="62" rx="6" fill="#161b20" stroke="#1f2730" stroke-width="1.5"/>
+          <text x="212" y="643" text-anchor="middle" font-family="'Courier New',monospace" font-size="9" fill="#8fa0b2" letter-spacing="0.1em">TEXT OUTPUT</text>
+          <text x="212" y="661" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#c9d3de">output scan + PII check</text>
+          <text x="212" y="676" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#4e5e6e">delivered to client</text>
+
+          <!-- TOOL EXECUTION -->
+          <rect x="415" y="622" width="265" height="62" rx="6" fill="#161b20" stroke="#4a9eff" stroke-width="1.5"/>
+          <text x="547" y="643" text-anchor="middle" font-family="'Courier New',monospace" font-size="9" fill="#4a9eff" letter-spacing="0.1em">TOOL EXECUTION</text>
+          <text x="547" y="661" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#c9d3de">function runner</text>
+          <text x="547" y="676" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#4e5e6e">API / DB / code sandbox</text>
+
+          <!-- result inject arrow -->
+          <line x1="540" y1="684" x2="540" y2="704" stroke="#4a9eff" stroke-width="1.5" marker-end="url(#arr)"/>
+
+          <!-- RESULT INJECTED -->
+          <rect x="330" y="706" width="420" height="52" rx="6" fill="#161b20" stroke="#3dba72" stroke-width="1.5"/>
+          <text x="540" y="726" text-anchor="middle" font-family="'Courier New',monospace" font-size="9" fill="#3dba72" letter-spacing="0.1em">RESULT INJECTED</text>
+          <text x="540" y="747" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#c9d3de">back into context (next loop turn)</text>
+
+          <!-- arrow to observability -->
+          <line x1="380" y1="758" x2="380" y2="778" stroke="#4a9eff" stroke-width="1.5" marker-end="url(#arr)"/>
+
+          <!-- OBSERVABILITY -->
+          <rect x="80" y="780" width="600" height="84" rx="6" fill="#161b20" stroke="#7c6af7" stroke-width="1.5"/>
+          <text x="380" y="800" text-anchor="middle" font-family="'Courier New',monospace" font-size="9" fill="#7c6af7" letter-spacing="0.14em">OBSERVABILITY LAYER</text>
+          <text x="380" y="822" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#c9d3de">trace log (Langfuse / OTEL) · cost + latency + token accounting</text>
+          <text x="380" y="840" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#c9d3de">BDD baseline comparison · DIRA execution audit</text>
+          <text x="380" y="857" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#4e5e6e">every call traced: prompt, response, tokens, cost, tool invocations</text>
+
+          <!-- final arrow -->
+          <line x1="380" y1="864" x2="380" y2="884" stroke="#4a9eff" stroke-width="1.5" marker-end="url(#arr)"/>
+
+          <!-- RESPONSE TO CLIENT -->
+          <rect x="80" y="886" width="600" height="24" rx="6" fill="#161b20" stroke="#4a9eff" stroke-width="1.5"/>
+          <text x="380" y="902" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" fill="#c9d3de">response + tool results + citations → USER / CLIENT APPLICATION</text>
+        </svg>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================================
+     WHAT IS A FRONTIER MODEL (new section)
+============================================================ -->
+<section id="what-is-frontier">
+  <div class="container">
+    <span class="section-number">02 -- Terminology</span>
+    <h2 class="section-title">What Is a Frontier Model?</h2>
+    <span class="section-title-line"></span>
+    <p class="section-intro">
+      The term appears constantly in AI coverage without being defined. That causes real confusion when selecting models, evaluating benchmarks, or designing routing logic. Here is a precise definition.
+    </p>
+
+    <p>
+      A frontier model is a model at the current capability edge across a broad task distribution. As of mid-2026, that tier includes GPT-4o and o3 (OpenAI), Claude Opus 4 and Sonnet 4 (Anthropic), Gemini 2.5 Pro (Google), and Llama 3.3 70B (Meta) on the open-weights side. What these models have in common: they are the first to hit human-competitive or superhuman performance on tasks that previous generations failed at consistently.
+    </p>
+
+    <p>
+      The frontier moves. GPT-3.5, which was genuinely impressive in late 2022, now gets beaten by models a fraction of its cost. Llama 2 has been superseded twice. "Frontier" is a relative position on a curve, not a grade stamped on a product. Any model described as frontier-class needs a date attached or the label is meaningless.
+    </p>
+
+    <p>
+      Closed-weights and open-weights both reach frontier quality. The distinction is not capability; it is control. Closed-weights models (Claude, GPT-4o, Gemini) are API-only. The provider runs the model, pushes updates, and manages safety filtering. You never touch the weights. Open-weights models (Llama 3.3, Mistral Large, DeepSeek R1) publish their parameters. You run them inside your own infrastructure, fine-tune on proprietary data, and decide when to upgrade. The trade-off is data residency and operational control against provider-managed simplicity.
+    </p>
+
+    <p>
+      "Frontier" is not a certification. No organization controls the designation. Vendors apply it to whatever they are selling this quarter, so treat "frontier performance" in any product brief with appropriate skepticism. The benchmarks that actually differentiate frontier from mid-tier are covered in Section 05. Those are the signal. Marketing copy is not.
+    </p>
+
+    <div class="fm-grid fade-in">
+      <div class="fm-card">
+        <span class="fm-card-label">Closed Weights</span>
+        <div class="fm-card-title">Claude, GPT-4o, Gemini</div>
+        <div class="fm-card-body">API access only. Provider manages model updates, safety filtering, and infrastructure. Data leaves your environment on every call. No customization below the prompt layer.</div>
+      </div>
+      <div class="fm-card">
+        <span class="fm-card-label">Open Weights</span>
+        <div class="fm-card-title">Llama 3.3, Mistral, DeepSeek</div>
+        <div class="fm-card-body">Weights are publicly released. Run inside your own infrastructure. Full customization including fine-tuning. Data stays in your environment. You own the model's behavior.</div>
+      </div>
+      <div class="fm-card">
+        <span class="fm-card-label">The Moving Frontier</span>
+        <div class="fm-card-title">Not a Fixed Category</div>
+        <div class="fm-card-body">What qualifies as frontier changes every few months. A model released at the frontier today will be mid-tier within a year. Harness design should abstract model identity so swapping is a config change, not a rewrite.</div>
+      </div>
+      <div class="fm-card">
+        <span class="fm-card-label">Verification Signal</span>
+        <div class="fm-card-title">Benchmarks, Not Claims</div>
+        <div class="fm-card-body">Saturated benchmarks (MMLU, HumanEval) no longer distinguish frontier from mid-tier. The real signal is performance on HLE, GPQA Diamond, ARC-AGI 2, and SWE-Bench Verified. Those are covered in Section 05.</div>
+      </div>
+    </div>
+
+    <div class="pull-quote fade-in">
+      <p>The model you selected six months ago is mid-tier now. Build the harness so that swap is a config change, not a crisis.</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================================
+     VVAH
+============================================================ -->
+<section id="vvah">
+  <div class="container">
+    <span class="section-number">03 -- Case Study</span>
+    <h2 class="section-title">VVAH: What a Production Harness Looks Like</h2>
+    <span class="section-title-line"></span>
+    <p class="section-intro">
+      Visa's Vulnerability and Vulnerability Agentic Hunter (VVAH) is a nine-stage agentic SAST pipeline released under
+      Apache 2.0 and built on learnings from Anthropic's Project Glasswing. It is the most detailed public example of a
+      production multi-agent harness doing real security work at scale.
+    </p>
+
+    <div class="callout">
+      <span class="callout-label">Key Insight</span>
+      <p>
+        The bottleneck in agentic security analysis is not finding vulnerabilities. Discovery accuracy is high even with
+        older models. The bottleneck is triage speed: how fast can the system surface findings that require human attention
+        without drowning analysts in false positives. The primary metric is MTTA, Mean Time to Adapt, not precision or recall alone.
+      </p>
+    </div>
+
+    <!-- VVAH SVG Flow Diagram -->
+    <div class="vvah-svg-wrap fade-in">
+      <svg viewBox="0 0 760 680" width="760" height="680" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="VVAH nine-stage pipeline flow diagram">
+        <defs>
+          <marker id="varr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#4a9eff"/>
+          </marker>
+        </defs>
+
+        <!-- Stage colors: input=#3dba72, processing=#4a9eff, highlight=#7c6af7, output=#e8803b -->
+
+        <!-- S1 Task Decomposition (input) -->
+        <rect x="220" y="10" width="320" height="50" rx="5" fill="#0e1e16" stroke="#3dba72" stroke-width="1.5"/>
+        <text x="260" y="31" font-family="'Courier New',monospace" font-size="9" fill="#3dba72" letter-spacing="0.12em">S1</text>
+        <text x="290" y="31" font-family="-apple-system,sans-serif" font-size="12" font-weight="600" fill="#e6edf3">Task Decomposition</text>
+        <text x="380" y="50" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#c9d3de">coordinator agent scopes analysis units</text>
+        <line x1="380" y1="60" x2="380" y2="80" stroke="#4a9eff" stroke-width="1.5" marker-end="url(#varr)"/>
+
+        <!-- S2 Context Retrieval (processing) -->
+        <rect x="220" y="82" width="320" height="50" rx="5" fill="#0d1825" stroke="#4a9eff" stroke-width="1.5"/>
+        <text x="260" y="103" font-family="'Courier New',monospace" font-size="9" fill="#4a9eff" letter-spacing="0.12em">S2</text>
+        <text x="290" y="103" font-family="-apple-system,sans-serif" font-size="12" font-weight="600" fill="#e6edf3">Context Retrieval</text>
+        <text x="380" y="122" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#c9d3de">RAG: related files, dependency graphs, CVE data</text>
+        <line x1="380" y1="132" x2="380" y2="152" stroke="#4a9eff" stroke-width="1.5" marker-end="url(#varr)"/>
+
+        <!-- S3 Multi-Agent Discovery (parallel — show split) -->
+        <rect x="50" y="154" width="200" height="50" rx="5" fill="#0d1825" stroke="#4a9eff" stroke-width="1.5"/>
+        <text x="90" y="175" font-family="'Courier New',monospace" font-size="9" fill="#4a9eff" letter-spacing="0.12em">S3a</text>
+        <text x="118" y="175" font-family="-apple-system,sans-serif" font-size="11" font-weight="600" fill="#e6edf3">Injection Agent</text>
+        <text x="150" y="193" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="9.5" fill="#c9d3de">specialized prompt</text>
+
+        <rect x="280" y="154" width="200" height="50" rx="5" fill="#0d1825" stroke="#4a9eff" stroke-width="1.5"/>
+        <text x="320" y="175" font-family="'Courier New',monospace" font-size="9" fill="#4a9eff" letter-spacing="0.12em">S3b</text>
+        <text x="348" y="175" font-family="-apple-system,sans-serif" font-size="11" font-weight="600" fill="#e6edf3">Auth Bypass Agent</text>
+        <text x="380" y="193" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="9.5" fill="#c9d3de">specialized prompt</text>
+
+        <rect x="510" y="154" width="200" height="50" rx="5" fill="#0d1825" stroke="#4a9eff" stroke-width="1.5"/>
+        <text x="550" y="175" font-family="'Courier New',monospace" font-size="9" fill="#4a9eff" letter-spacing="0.12em">S3c</text>
+        <text x="578" y="175" font-family="-apple-system,sans-serif" font-size="11" font-weight="600" fill="#e6edf3">Crypto / Logic Agent</text>
+        <text x="610" y="193" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="9.5" fill="#c9d3de">specialized prompt</text>
+
+        <!-- S3 label -->
+        <text x="380" y="148" text-anchor="middle" font-family="'Courier New',monospace" font-size="9" fill="#4a9eff" letter-spacing="0.12em">S3 — MULTI-AGENT DISCOVERY (parallel)</text>
+
+        <!-- split from S2 -->
+        <line x1="380" y1="152" x2="150" y2="152" stroke="#4a9eff" stroke-width="1"/>
+        <line x1="380" y1="152" x2="610" y2="152" stroke="#4a9eff" stroke-width="1"/>
+        <line x1="150" y1="152" x2="150" y2="154" stroke="#4a9eff" stroke-width="1" marker-end="url(#varr)"/>
+        <line x1="380" y1="152" x2="380" y2="154" stroke="#4a9eff" stroke-width="1" marker-end="url(#varr)"/>
+        <line x1="610" y1="152" x2="610" y2="154" stroke="#4a9eff" stroke-width="1" marker-end="url(#varr)"/>
+
+        <!-- merge from S3 to S4 -->
+        <line x1="150" y1="204" x2="150" y2="224" stroke="#4a9eff" stroke-width="1"/>
+        <line x1="380" y1="204" x2="380" y2="224" stroke="#4a9eff" stroke-width="1"/>
+        <line x1="610" y1="204" x2="610" y2="224" stroke="#4a9eff" stroke-width="1"/>
+        <line x1="150" y1="224" x2="610" y2="224" stroke="#4a9eff" stroke-width="1"/>
+        <line x1="380" y1="224" x2="380" y2="234" stroke="#4a9eff" stroke-width="1" marker-end="url(#varr)"/>
+
+        <!-- S4 Multi-Agent Voting -->
+        <rect x="220" y="236" width="320" height="50" rx="5" fill="#0d1825" stroke="#4a9eff" stroke-width="1.5"/>
+        <text x="260" y="257" font-family="'Courier New',monospace" font-size="9" fill="#4a9eff" letter-spacing="0.12em">S4</text>
+        <text x="290" y="257" font-family="-apple-system,sans-serif" font-size="12" font-weight="600" fill="#e6edf3">Multi-Agent Voting</text>
+        <text x="380" y="276" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#c9d3de">cross-agent consensus, primary FP reduction</text>
+        <line x1="380" y1="286" x2="380" y2="306" stroke="#4a9eff" stroke-width="1.5" marker-end="url(#varr)"/>
+
+        <!-- S5 Enrichment -->
+        <rect x="220" y="308" width="320" height="50" rx="5" fill="#0d1825" stroke="#4a9eff" stroke-width="1.5"/>
+        <text x="260" y="329" font-family="'Courier New',monospace" font-size="9" fill="#4a9eff" letter-spacing="0.12em">S5</text>
+        <text x="290" y="329" font-family="-apple-system,sans-serif" font-size="12" font-weight="600" fill="#e6edf3">Enrichment</text>
+        <text x="380" y="348" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#c9d3de">CVSS, CWE, blast radius, compensating controls</text>
+        <line x1="380" y1="358" x2="380" y2="378" stroke="#4a9eff" stroke-width="1.5" marker-end="url(#varr)"/>
+
+        <!-- S6 Adversarial Verification (highlight) -->
+        <rect x="180" y="380" width="400" height="58" rx="5" fill="rgba(124,106,247,0.08)" stroke="#7c6af7" stroke-width="2"/>
+        <text x="230" y="401" font-family="'Courier New',monospace" font-size="9" fill="#7c6af7" letter-spacing="0.12em">S6 — KEY INNOVATION</text>
+        <text x="380" y="401" font-family="-apple-system,sans-serif" font-size="12" font-weight="600" fill="#e6edf3" text-anchor="middle" dx="40">Adversarial Verification</text>
+        <text x="380" y="420" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#c9d3de">independent model, adversarial posture</text>
+        <text x="380" y="435" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#c9d3de">no access to S3/S4 reasoning chains</text>
+        <line x1="380" y1="438" x2="380" y2="458" stroke="#4a9eff" stroke-width="1.5" marker-end="url(#varr)"/>
+
+        <!-- S7 Triage -->
+        <rect x="220" y="460" width="320" height="50" rx="5" fill="#0d1825" stroke="#4a9eff" stroke-width="1.5"/>
+        <text x="260" y="481" font-family="'Courier New',monospace" font-size="9" fill="#4a9eff" letter-spacing="0.12em">S7</text>
+        <text x="290" y="481" font-family="-apple-system,sans-serif" font-size="12" font-weight="600" fill="#e6edf3">Triage</text>
+        <text x="380" y="500" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#c9d3de">severity ranking, MTTA optimization</text>
+        <line x1="380" y1="510" x2="380" y2="530" stroke="#4a9eff" stroke-width="1.5" marker-end="url(#varr)"/>
+
+        <!-- S8 Remediation -->
+        <rect x="220" y="532" width="320" height="50" rx="5" fill="#0d1825" stroke="#4a9eff" stroke-width="1.5"/>
+        <text x="260" y="553" font-family="'Courier New',monospace" font-size="9" fill="#4a9eff" letter-spacing="0.12em">S8</text>
+        <text x="290" y="553" font-family="-apple-system,sans-serif" font-size="12" font-weight="600" fill="#e6edf3">Remediation Suggestion</text>
+        <text x="380" y="572" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#c9d3de">draft PRs, fix suggestions — human review gate</text>
+        <line x1="380" y1="582" x2="380" y2="602" stroke="#4a9eff" stroke-width="1.5" marker-end="url(#varr)"/>
+
+        <!-- S9 SARIF Output -->
+        <rect x="220" y="604" width="320" height="50" rx="5" fill="#0e1e0a" stroke="#3dba72" stroke-width="1.5"/>
+        <text x="260" y="625" font-family="'Courier New',monospace" font-size="9" fill="#3dba72" letter-spacing="0.12em">S9</text>
+        <text x="290" y="625" font-family="-apple-system,sans-serif" font-size="12" font-weight="600" fill="#e6edf3">SARIF Output</text>
+        <text x="380" y="644" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#c9d3de">GitHub / Azure DevOps / SIEM integration</text>
+
+        <!-- Legend -->
+        <rect x="10" y="460" width="130" height="70" rx="4" fill="#111418" stroke="#1f2730"/>
+        <text x="75" y="476" text-anchor="middle" font-family="'Courier New',monospace" font-size="8" fill="#4e5e6e" letter-spacing="0.1em">LEGEND</text>
+        <rect x="18" y="484" width="10" height="10" rx="2" fill="#0e1e16" stroke="#3dba72"/>
+        <text x="33" y="494" font-family="-apple-system,sans-serif" font-size="9" fill="#c9d3de">input / output</text>
+        <rect x="18" y="502" width="10" height="10" rx="2" fill="#0d1825" stroke="#4a9eff"/>
+        <text x="33" y="512" font-family="-apple-system,sans-serif" font-size="9" fill="#c9d3de">processing</text>
+        <rect x="18" y="520" width="10" height="10" rx="2" fill="rgba(124,106,247,0.08)" stroke="#7c6af7"/>
+        <text x="33" y="530" font-family="-apple-system,sans-serif" font-size="9" fill="#c9d3de">key innovation</text>
+      </svg>
+    </div>
+
+    <div class="pipeline">
+
+      <div class="pipeline-stage">
+        <div class="stage-left">
+          <div class="stage-badge">S1</div>
+          <div class="stage-line"></div>
+        </div>
+        <div class="stage-right">
+          <div class="stage-name">Task Decomposition</div>
+          <div class="stage-desc">The incoming codebase or diff is broken into scoped analysis units. A coordinator agent creates a task plan with explicit scope boundaries. This is where the harness does its first major quality gate: a poorly scoped task at S1 creates compounding noise through every subsequent stage.</div>
+        </div>
+      </div>
+
+      <div class="pipeline-stage">
+        <div class="stage-left">
+          <div class="stage-badge">S2</div>
+          <div class="stage-line"></div>
+        </div>
+        <div class="stage-right">
+          <div class="stage-name">Context Retrieval</div>
+          <div class="stage-desc">Each analysis task retrieves relevant context: related files, dependency graphs, historical vulnerability patterns for this codebase, and relevant CVE data. This is the RAG layer, but structured for code analysis rather than general knowledge retrieval. Context quality directly determines what the analysis agents can see.</div>
+        </div>
+      </div>
+
+      <div class="pipeline-stage">
+        <div class="stage-left">
+          <div class="stage-badge">S3</div>
+          <div class="stage-line"></div>
+        </div>
+        <div class="stage-right">
+          <div class="stage-name">Multi-Agent Discovery</div>
+          <div class="stage-desc">Multiple specialized analysis agents run in parallel against each scoped task. Different agents carry different system prompts tuned for different vulnerability classes: injection, authentication bypass, cryptographic weakness, logic errors, supply chain issues. Parallel execution reduces wall-clock time; specialization reduces noise per agent.</div>
+        </div>
+      </div>
+
+      <div class="pipeline-stage">
+        <div class="stage-left">
+          <div class="stage-badge">S4</div>
+          <div class="stage-line"></div>
+        </div>
+        <div class="stage-right">
+          <div class="stage-name">Multi-Agent Voting</div>
+          <div class="stage-desc">Findings from S3 agents are aggregated and scored by a voting mechanism. A finding that only one agent surfaces receives lower weight than one that multiple independent agents identify. This cross-agent consensus step is the primary false positive reduction mechanism in VVAH and is a direct response to the single-model hallucination problem.</div>
+        </div>
+      </div>
+
+      <div class="pipeline-stage">
+        <div class="stage-left">
+          <div class="stage-badge">S5</div>
+          <div class="stage-line"></div>
+        </div>
+        <div class="stage-right">
+          <div class="stage-name">Enrichment</div>
+          <div class="stage-desc">Surviving findings are enriched with additional context: CVSS scoring, CWE classification, exploit precedent from historical data, blast radius estimation, and compensating control analysis. This is where the harness tools layer does its heaviest lifting, pulling structured data from external systems to give the triage agent what it needs.</div>
+        </div>
+      </div>
+
+      <div class="pipeline-stage">
+        <div class="stage-left">
+          <div class="stage-badge highlight">S6</div>
+          <div class="stage-line"></div>
+        </div>
+        <div class="stage-right highlight">
+          <div class="stage-name">Adversarial Verification</div>
+          <div class="stage-desc">
+            A second, independent model is invoked with a deliberate adversarial posture: its job is to find reasons why the S4 findings are wrong. This agent has no access to the S3 or S4 reasoning chains. It works only from the code, the claimed finding, and its own analysis. Findings that survive S6 are materially more reliable than single-pass analysis.
+          </div>
+          <div class="stage-desc" style="margin-top: 0.75rem;">
+            This is the architectural innovation in VVAH. The adversarial verifier is the reason VVAH's precision at triage is meaningfully higher than conventional SAST. The pattern generalizes: any agentic workflow where accuracy matters more than speed should consider inserting an adversarial verification stage.
+          </div>
+        </div>
+      </div>
+
+      <div class="pipeline-stage">
+        <div class="stage-left">
+          <div class="stage-badge">S7</div>
+          <div class="stage-line"></div>
+        </div>
+        <div class="stage-right">
+          <div class="stage-name">Triage</div>
+          <div class="stage-desc">A triage agent ranks surviving findings by severity, exploitability, and organizational context. This is where MTTA is determined: how quickly can a human analyst be given a prioritized, accurate, actionable list? The triage agent's system prompt encodes organizational risk appetite and policy, which is harness-layer configuration, not model capability.</div>
+        </div>
+      </div>
+
+      <div class="pipeline-stage">
+        <div class="stage-left">
+          <div class="stage-badge">S8</div>
+          <div class="stage-line"></div>
+        </div>
+        <div class="stage-right">
+          <div class="stage-name">Remediation Suggestion</div>
+          <div class="stage-desc">For triaged findings, a remediation agent generates concrete fix suggestions: specific code changes, configuration corrections, library version pins. These are attached to findings as draft PRs or advisory comments, not auto-merged. Human review is preserved as the authorization gate.</div>
+        </div>
+      </div>
+
+      <div class="pipeline-stage">
+        <div class="stage-left">
+          <div class="stage-badge">S9</div>
+          <div class="stage-line"></div>
+        </div>
+        <div class="stage-right">
+          <div class="stage-name">SARIF Output</div>
+          <div class="stage-desc">Results are serialized to SARIF (Static Analysis Results Interchange Format), the industry standard for toolchain integration. This allows VVAH output to drop into GitHub Advanced Security, Azure DevOps, SIEM platforms, and any SARIF-consuming tool without custom integration work. Standardized output format is a first-class harness design concern.</div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================================
+     FRONTIER MODELS TABLE
+============================================================ -->
+<section id="frontier-models">
+  <div class="container">
+    <span class="section-number">04 -- Landscape</span>
+    <h2 class="section-title">Frontier Models</h2>
+    <span class="section-title-line"></span>
+    <p class="section-intro">
+      The frontier model landscape changes faster than almost any technical field. The table below is a current snapshot,
+      not a permanent ranking. What matters more than the specific numbers is understanding the categories and the
+      trade-offs that govern harness design decisions.
+    </p>
+
+    <div class="table-wrapper sticky-head fade-in">
+      <table>
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Provider</th>
+            <th>Context</th>
+            <th>Weights</th>
+            <th>Modalities</th>
+            <th>License</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="row-anthropic">
+            <td>Claude Opus 4</td>
+            <td>Anthropic</td>
+            <td>200K tokens</td>
+            <td><span class="tag-closed">Closed</span></td>
+            <td>Text, vision</td>
+            <td>API only</td>
+          </tr>
+          <tr class="row-openai">
+            <td>GPT-4o</td>
+            <td>OpenAI</td>
+            <td>128K tokens</td>
+            <td><span class="tag-closed">Closed</span></td>
+            <td>Text, vision, audio</td>
+            <td>API only</td>
+          </tr>
+          <tr class="row-google">
+            <td>Gemini 2.5 Pro</td>
+            <td>Google</td>
+            <td>1M tokens</td>
+            <td><span class="tag-closed">Closed</span></td>
+            <td>Text, vision, audio, video</td>
+            <td>API only</td>
+          </tr>
+          <tr class="row-open">
+            <td>Llama 3.3 70B</td>
+            <td>Meta</td>
+            <td>128K tokens</td>
+            <td><span class="tag-open">Open</span></td>
+            <td>Text</td>
+            <td>Llama 3 Community</td>
+          </tr>
+          <tr class="row-open">
+            <td>Mistral Large 2</td>
+            <td>Mistral AI</td>
+            <td>128K tokens</td>
+            <td><span class="tag-open">Open</span></td>
+            <td>Text, vision</td>
+            <td>Apache 2.0</td>
+          </tr>
+          <tr class="row-open">
+            <td>DeepSeek R2</td>
+            <td>DeepSeek</td>
+            <td>64K tokens</td>
+            <td><span class="tag-open">Open</span></td>
+            <td>Text</td>
+            <td>MIT / API</td>
+          </tr>
+          <tr class="row-openai">
+            <td>Grok 3</td>
+            <td>xAI</td>
+            <td>131K tokens</td>
+            <td><span class="tag-closed">Closed</span></td>
+            <td>Text, vision</td>
+            <td>API only</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="mt-xl mb-sm">Closed vs. Open Weights</h3>
+    <p>
+      The closed/open distinction matters for harness design in four ways: data residency, inference cost, customization depth, and supply chain risk.
+    </p>
+
+    <div class="two-col">
+      <div class="compare-card">
+        <h3>Closed Weights</h3>
+        <ul>
+          <li>Data leaves your environment on every call</li>
+          <li>No ability to fine-tune on proprietary datasets</li>
+          <li>Provider controls safety filtering behavior</li>
+          <li>SOTA reasoning and multimodal capability</li>
+          <li>Zero infrastructure overhead</li>
+          <li>Usage cost scales linearly with volume</li>
+          <li>Model can be updated without your consent</li>
+        </ul>
+      </div>
+      <div class="compare-card">
+        <h3>Open Weights</h3>
+        <ul>
+          <li>Inference stays inside your environment</li>
+          <li>Fine-tuning and full customization available</li>
+          <li>You control update cadence</li>
+          <li>Hardware cost is fixed; marginal cost approaches zero</li>
+          <li>Supply chain risk: you own the model's behavior</li>
+          <li>Capability gap vs. frontier closed models is real but narrowing</li>
+          <li>Apache 2.0 (Mistral) is cleanest for commercial use</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout mt-lg">
+      <span class="callout-label">Context Window Mechanics</span>
+      <p>
+        A 1M token context window does not mean 1M tokens of useful working memory. The "lost in the middle" problem is well-documented: models retrieve information from the beginning and end of long contexts more reliably than from the middle. Critical instructions and retrieved facts belong at the top of the context. Supporting material goes last.
+        Gemini 2.5's 1M window is a real capability advantage for long-document analysis, but routing strategy and context assembly discipline still determine whether that window is used effectively.
+      </p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================================
+     BENCHMARK SATURATION
+============================================================ -->
+<section id="benchmark-saturation">
+  <div class="container">
+    <span class="section-number">05 -- Evaluation</span>
+    <h2 class="section-title">The Benchmark Saturation Problem</h2>
+    <span class="section-title-line"></span>
+    <p class="section-intro">
+      MMLU, HumanEval, and GSM8K are all at or above 90% for frontier models. They no longer differentiate.
+      The field has moved on, but the press releases have not.
+    </p>
+
+    <div class="stat-row fade-in">
+      <div class="stat-item">
+        <div class="stat-value">90%+</div>
+        <div class="stat-label">MMLU scores for all major frontier models as of mid-2026. No meaningful differentiation.</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">95%+</div>
+        <div class="stat-label">HumanEval pass@1 for frontier coding models. Saturated as a code benchmark.</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">&lt;20%</div>
+        <div class="stat-label">Best-known SOTA on HLE (Humanity's Last Exam) as of early 2026. This is the new ceiling.</div>
+      </div>
+    </div>
+
+    <h3 class="mb-md">The Actual Evaluation Frontier</h3>
+    <p>
+      These are the benchmarks that still differentiate frontier models and inform real harness design decisions.
+    </p>
+
+    <div class="benchmark-grid">
+
+      <div class="benchmark-card fade-in">
+        <div class="benchmark-name">HLE</div>
+        <div class="benchmark-full">Humanity's Last Exam</div>
+        <div class="benchmark-stat">&lt;20% SOTA</div>
+        <div class="benchmark-desc">3,000 expert-level questions across 100 disciplines, contributed by domain specialists. Designed specifically to be unsolvable by internet search or rote recall. Currently the hardest public benchmark.</div>
+      </div>
+
+      <div class="benchmark-card fade-in">
+        <div class="benchmark-name">GPQA Diamond</div>
+        <div class="benchmark-full">Graduate-Level Google-Proof Q&amp;A</div>
+        <div class="benchmark-stat">~60% SOTA</div>
+        <div class="benchmark-desc">PhD-level science questions that require genuine reasoning rather than recall. "Google-proof" means the answer is not findable by web search. Strong signal for reasoning depth, not just knowledge coverage.</div>
+      </div>
+
+      <div class="benchmark-card fade-in">
+        <div class="benchmark-name">ARC-AGI 2</div>
+        <div class="benchmark-full">Abstraction and Reasoning Corpus v2</div>
+        <div class="benchmark-stat">~5% SOTA</div>
+        <div class="benchmark-desc">Visual pattern reasoning tasks that humans solve easily but models consistently fail. Measures genuine novel abstraction, not pattern matching against training data. ARC-AGI 2 raises the bar substantially from the original.</div>
+      </div>
+
+      <div class="benchmark-card fade-in">
+        <div class="benchmark-name">SWE-Bench Verified</div>
+        <div class="benchmark-full">Software Engineering Benchmark</div>
+        <div class="benchmark-stat">~50% SOTA</div>
+        <div class="benchmark-desc">Real GitHub issues from open-source projects, with human-verified correct resolutions. Measures end-to-end software engineering: understanding codebases, localizing bugs, writing correct fixes. Direct signal for harness-plus-model coding agent design.</div>
+      </div>
+
+      <div class="benchmark-card fade-in">
+        <div class="benchmark-name">tau-bench</div>
+        <div class="benchmark-full">Tool-Agent-User Benchmark</div>
+        <div class="benchmark-stat">~50% SOTA</div>
+        <div class="benchmark-desc">Simulated customer service tasks requiring real tool use, multi-turn reasoning, and policy compliance. Specifically designed to measure harness-in-the-loop agent performance, not isolated model capability. The benchmark closest to production agentic workloads.</div>
+      </div>
+
+    </div>
+
+    <div class="callout callout-warn mt-lg">
+      <span class="callout-label">Harness Design Implication</span>
+      <p>
+        Selecting models based on MMLU scores is procurement theater. The benchmarks that still differentiate (HLE, GPQA Diamond, SWE-Bench, tau-bench) share a pattern: hard tasks need reasoning chains, tool use, and multi-step planning, not raw knowledge. The harness enables all three. A well-designed harness with a mid-tier model frequently beats a poorly designed harness with a frontier model.
+      </p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================================
+     REASONING MODELS
+============================================================ -->
+<section id="reasoning-models">
+  <div class="container">
+    <span class="section-number">06 -- Architecture</span>
+    <h2 class="section-title">Reasoning vs. Completion Models</h2>
+    <span class="section-title-line"></span>
+    <p class="section-intro">
+      OpenAI's o1 introduced the reasoning model pattern: give the model an internal scratchpad before it commits to an answer. Claude's extended thinking mode, DeepSeek R1, and others followed. Same mechanism, different pricing and latency profiles.
+    </p>
+
+    <div class="two-col">
+      <div class="compare-card">
+        <h3>Completion Models</h3>
+        <p>Claude Opus 4 (standard), GPT-4o, Gemini 2.5, Llama 3.3</p>
+        <ul>
+          <li>Single forward pass: prompt in, token sequence out</li>
+          <li>Latency: fast, typically 2-15 seconds for medium prompts</li>
+          <li>Well-calibrated for tasks with clear instructions</li>
+          <li>Best for: summarization, extraction, generation, tool selection</li>
+          <li>Cost is proportional to input + output tokens</li>
+          <li>Default choice for high-volume, latency-sensitive routes</li>
+        </ul>
+      </div>
+      <div class="compare-card">
+        <h3>Reasoning Models</h3>
+        <p>o3, Claude extended thinking, DeepSeek R1</p>
+        <ul>
+          <li>Internal chain-of-thought (scratchpad) before final answer</li>
+          <li>Latency: slow, often 30-120 seconds for hard problems</li>
+          <li>Significantly higher accuracy on multi-step logic and math</li>
+          <li>Best for: complex debugging, theorem-proving, strategic planning</li>
+          <li>Cost includes reasoning tokens (often 5-20x standard cost)</li>
+          <li>Route here only when completion models demonstrably fail</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout mt-lg">
+      <span class="callout-label">Routing Signal</span>
+      <p>
+        The harness routing layer determines when a task warrants a reasoning model. The signal is not task complexity in the abstract;
+        it is whether the task has a structure where more thinking time demonstrably improves accuracy.
+        Mathematical proofs, adversarial verification (as in VVAH S6), security threat modeling, and long-horizon planning
+        are strong routing signals for reasoning models. Summarization, entity extraction, and code formatting are not.
+        Getting this routing decision wrong in either direction is expensive: reasoning models on simple tasks waste latency and cost;
+        completion models on hard tasks produce confident wrong answers.
+      </p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================================
+     A2A TRUST GAP
+============================================================ -->
+<section id="a2a-trust">
+  <div class="container">
+    <span class="section-number">07 -- Research Gap</span>
+    <h2 class="section-title">The Agent-to-Agent Trust Gap</h2>
+    <span class="section-title-line"></span>
+    <p class="section-intro">
+      Single-model deployments have one trust boundary: the user request. Multi-agent systems have one per hop. When an orchestrator delegates to a subagent, the subagent needs to know who is calling, what they are authorized to request, and whether they have been compromised upstream. Current protocols solve part of that problem. Not all of it.
+    </p>
+
+    <h3 class="mb-sm">A2A Protocol and Agent Cards</h3>
+    <p>
+      Google's Agent-to-Agent (A2A) protocol, released in 2025, handles the identity layer. An Agent Card is a cryptographically signed document stating an agent's identity, capabilities, and authorized scope. When an orchestrator delegates to a subagent, it passes an Agent Card. The subagent verifies the card and checks whether the request fits the declared scope. That is a real improvement over nothing. It is not a complete solution.
+    </p>
+
+    <div class="callout callout-warn mt-md">
+      <span class="callout-label">Open Red-Team Surface</span>
+      <p>
+        A2A Agent Cards solve the identity assertion problem but leave a critical gap unaddressed: there is no published evaluation
+        suite that tests whether delegated agents actually respect scope boundaries when the upstream delegating agent is adversarially
+        manipulated. An orchestrator agent that has been compromised via prompt injection can present a valid, cryptographically
+        authentic Agent Card while delegating actions that fall outside the original task scope. The receiving agent has no basis
+        for detecting this because the credential is legitimate even if the intent is not.
+      </p>
+    </div>
+
+    <h3 style="margin: 2rem 0 0.75rem;">What DIRA Addresses Here</h3>
+    <p>
+      Dual-Intent Runtime Authorization (DIRA) attacks the problem differently. Instead of trusting the credential, it requires the agent to declare its intent at task start. That declaration is cryptographically bound to the session. At execution time, DIRA compares actual tool calls and data access against the declared intent. Deviations generate audit events. Large enough deviations block execution.
+    </p>
+    <p>
+      In a multi-agent pipeline, DIRA gates run at each delegation hop, not just the entry point. A compromised orchestrator can pass a valid Agent Card and a manipulated intent. The downstream subagent's DIRA gate catches the mismatch between declared scope and actual execution request. The credential is not enough; the behavior has to match.
+    </p>
+
+    <div class="table-wrapper mt-md">
+      <table>
+        <thead>
+          <tr>
+            <th>Threat</th>
+            <th>A2A Agent Cards</th>
+            <th>DIRA</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Impersonation of a legitimate agent</td>
+            <td style="color: #3dba72;">Addressed (cryptographic identity)</td>
+            <td style="color: #3dba72;">Addressed (session binding)</td>
+          </tr>
+          <tr>
+            <td>Scope creep via manipulated orchestrator</td>
+            <td style="color: #f87171;">Not addressed</td>
+            <td style="color: #3dba72;">Addressed (intent vs. execution audit)</td>
+          </tr>
+          <tr>
+            <td>Indirect prompt injection via tool results</td>
+            <td style="color: #f87171;">Not addressed</td>
+            <td style="color: #fbbf24;">Partial (context drift detection)</td>
+          </tr>
+          <tr>
+            <td>Capability escalation across delegation hops</td>
+            <td style="color: #fbbf24;">Partial (scope in Agent Card)</td>
+            <td style="color: #3dba72;">Addressed (per-hop gate)</td>
+          </tr>
+          <tr>
+            <td>Replay of a valid Agent Card for unauthorized task</td>
+            <td style="color: #f87171;">Not addressed (nonce support varies)</td>
+            <td style="color: #3dba72;">Addressed (session-scoped binding)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================================
+     WHY HARNESS OUTLASTS MODEL
+============================================================ -->
+<section id="harness-outlasts">
+  <div class="container">
+    <span class="section-number">08 -- Principles</span>
+    <h2 class="section-title">Why the Harness Outlasts the Model</h2>
+    <span class="section-title-line"></span>
+    <p class="section-intro">
+      Enterprise AI projects fail at the harness layer, not the model layer. The system prompt, the retrieval strategy, the tool authorization design, the observability configuration: get any of those wrong and a frontier model produces garbage reliably.
+    </p>
+
+    <div class="stat-row fade-in">
+      <div class="stat-item">
+        <div class="stat-value">65%</div>
+        <div class="stat-label">Fraction of enterprise AI project failures attributable to harness-level defects rather than model reasoning. Source: Gartner, McKinsey analysis, 2024-2025.</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">6 mo</div>
+        <div class="stat-label">Typical production lifespan of a specific model version before the provider releases an update or deprecates the version.</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">2-5 yr</div>
+        <div class="stat-label">Typical lifespan of a well-architected harness with stable routing abstractions and external tool contracts.</div>
+      </div>
+    </div>
+
+    <h3 class="mb-sm">The OS / CPU Frame</h3>
+    <p>
+      An operating system abstracts hardware from applications. You write to OS APIs, not CPU instruction sets. When Intel ships a new architecture, your application does not get rewritten; the OS handles translation. Applications outlast CPUs because the OS absorbs the hardware churn.
+    </p>
+    <p>
+      A well-designed harness does the same thing for model churn. Keep your retrieval strategy, tool contracts, routing logic, and evaluation criteria at the harness layer rather than tied to a specific model's quirks. Then swapping models is an infrastructure config change, not a product redesign.
+    </p>
+    <p>
+      Organizations that chase model releases instead of investing in the harness layer will spend the next decade rewriting applications every six months. The ones that get durable value from AI are betting on the layer they control.
+    </p>
+
+    <div class="pull-quote fade-in">
+      <p>The harness is the product. The model is a swappable dependency you do not control.</p>
+    </div>
+
+    <div class="callout mt-lg">
+      <span class="callout-label">Design Principle</span>
+      <p>
+        Build your harness so that "swap the model" is a config change, not a code change. This means: no model-specific prompt
+        formatting embedded in application code, no hardcoded model behaviors in business logic, evaluation criteria defined against
+        observable outputs not model internals, and routing logic that treats each model as a capability provider behind a stable interface.
+      </p>
+    </div>
+
+    <h3 style="margin: 2.5rem 0 0.75rem;">Where Harness Failures Actually Happen</h3>
+
+    <div class="card-grid" style="grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));">
+
+      <div class="card fade-in">
+        <div class="card-title">Context Assembly Failures</div>
+        <div class="card-body">
+          <p>Wrong documents retrieved, retrieved facts placed in the middle of long contexts, stale memory injected from prior sessions, system prompt overwritten by adversarial user input. The model reasons correctly over incorrect input and produces confidently wrong output.</p>
+        </div>
+      </div>
+
+      <div class="card fade-in">
+        <div class="card-title">Tool Authorization Gaps</div>
+        <div class="card-body">
+          <p>Tools registered in the function manifest that should not be available for a given task type or user role. The model calls a write API when it should be read-only. Data that should stay within a tenant boundary crosses into another session's context via shared retrieval indices.</p>
+        </div>
+      </div>
+
+      <div class="card fade-in">
+        <div class="card-title">Observability Blindness</div>
+        <div class="card-body">
+          <p>No trace logging means no ability to reconstruct what the model saw when it produced a wrong or harmful output. No cost tracking means runaway token consumption goes undetected until the billing alert fires. No behavioral baseline means model degradation after a provider update is invisible until users report it.</p>
+        </div>
+      </div>
+
+      <div class="card fade-in">
+        <div class="card-title">Prompt Brittleness</div>
+        <div class="card-body">
+          <p>System prompts that work in development break under production input distribution. Instructions that worked with one model version stop working after a provider update. No evaluation harness means regressions are caught by users, not by tests.</p>
+        </div>
+      </div>
+
+      <div class="card fade-in">
+        <div class="card-title">Memory State Drift</div>
+        <div class="card-body">
+          <p>Long-term memory that accumulates errors over time with no correction mechanism. Episodic memory that retrieves irrelevant past sessions at high similarity scores because the retrieval model was not tuned for the task. Memory writes that race with reads across concurrent sessions and produce corrupted state.</p>
+        </div>
+      </div>
+
+      <div class="card fade-in">
+        <div class="card-title">Missing Safety Layers</div>
+        <div class="card-body">
+          <p>Over-reliance on model-level safety filtering with no harness-level backstop. PII that flows through to model context without tokenization, then appears in log files. No intent classification gate, so adversarial prompts can escalate privileges by describing themselves as an authorized system role.</p>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================================
+     FIND YOUR EVALUATION LEVEL WIZARD
+============================================================ -->
+<section class="tool-section" id="eval-finder">
+  <div class="container">
+    <span class="section-number">Tool -- Interactive</span>
+    <h2 class="section-title">Find Your Evaluation Level</h2>
+    <span class="section-title-line"></span>
+    <p class="section-intro">
+      Answer five questions. Get a recommended starting level, the three sections to read first, and what to add when you are ready to go deeper.
+    </p>
+
+    <div id="eval-wizard">
+      <div class="wizard-header">
+        <span class="wizard-title">Evaluation Level Finder</span>
+        <div class="wizard-progress">
+          <div class="progress-dot active" id="pd1"></div>
+          <div class="progress-dot" id="pd2"></div>
+          <div class="progress-dot" id="pd3"></div>
+          <div class="progress-dot" id="pd4"></div>
+          <div class="progress-dot" id="pd5"></div>
+        </div>
+      </div>
+      <div class="wizard-body">
+
+        <!-- Q1 -->
+        <div class="wizard-question active" id="wq1">
+          <span class="wizard-q-label">Question 1 of 5</span>
+          <p class="wizard-q-text">What are you trying to evaluate?</p>
+          <div class="wizard-options">
+            <button class="wizard-option" data-q="1" data-v="accuracy">Model accuracy and factual quality</button>
+            <button class="wizard-option" data-q="1" data-v="safety">Safety and alignment behavior</button>
+            <button class="wizard-option" data-q="1" data-v="agent">Agent behavior (tool use, multi-step, autonomous)</button>
+            <button class="wizard-option" data-q="1" data-v="compliance">Compliance or regulatory requirements</button>
+            <button class="wizard-option" data-q="1" data-v="unsure">Not sure yet</button>
+          </div>
+          <div class="wizard-nav">
+            <button class="wizard-btn" id="wq1-next" disabled>Next</button>
+          </div>
+        </div>
+
+        <!-- Q2 -->
+        <div class="wizard-question" id="wq2">
+          <span class="wizard-q-label">Question 2 of 5</span>
+          <p class="wizard-q-text">How much ML/AI experience does your team have?</p>
+          <div class="wizard-options">
+            <button class="wizard-option" data-q="2" data-v="none">None, we are getting started</button>
+            <button class="wizard-option" data-q="2" data-v="some">Some, we have deployed a few models</button>
+            <button class="wizard-option" data-q="2" data-v="deep">Deep, we build and operate AI systems</button>
+          </div>
+          <div class="wizard-nav">
+            <button class="wizard-btn wizard-btn-back" id="wq2-back">Back</button>
+            <button class="wizard-btn" id="wq2-next" disabled>Next</button>
+          </div>
+        </div>
+
+        <!-- Q3 -->
+        <div class="wizard-question" id="wq3">
+          <span class="wizard-q-label">Question 3 of 5</span>
+          <p class="wizard-q-text">Are you evaluating a standalone model or an agentic system with tool use, multi-step planning, or autonomous action?</p>
+          <div class="wizard-options">
+            <button class="wizard-option" data-q="3" data-v="standalone">Standalone model, single-turn or simple chat</button>
+            <button class="wizard-option" data-q="3" data-v="agentic">Agentic system with tools or multi-step execution</button>
+            <button class="wizard-option" data-q="3" data-v="both">Both, we have a mix</button>
+          </div>
+          <div class="wizard-nav">
+            <button class="wizard-btn wizard-btn-back" id="wq3-back">Back</button>
+            <button class="wizard-btn" id="wq3-next" disabled>Next</button>
+          </div>
+        </div>
+
+        <!-- Q4 -->
+        <div class="wizard-question" id="wq4">
+          <span class="wizard-q-label">Question 4 of 5</span>
+          <p class="wizard-q-text">What is the consequence of a failure in your system?</p>
+          <div class="wizard-options">
+            <button class="wizard-option" data-q="4" data-v="low">Low: internal tooling, recoverable mistakes</button>
+            <button class="wizard-option" data-q="4" data-v="medium">Medium: customer-facing, reputational impact</button>
+            <button class="wizard-option" data-q="4" data-v="high">High: regulated industry, audit exposure</button>
+            <button class="wizard-option" data-q="4" data-v="critical">Critical: safety or security consequences</button>
+          </div>
+          <div class="wizard-nav">
+            <button class="wizard-btn wizard-btn-back" id="wq4-back">Back</button>
+            <button class="wizard-btn" id="wq4-next" disabled>Next</button>
+          </div>
+        </div>
+
+        <!-- Q5 -->
+        <div class="wizard-question" id="wq5">
+          <span class="wizard-q-label">Question 5 of 5</span>
+          <p class="wizard-q-text">Do you have an existing evaluation framework, or are you starting from scratch?</p>
+          <div class="wizard-options">
+            <button class="wizard-option" data-q="5" data-v="existing">We have an existing framework</button>
+            <button class="wizard-option" data-q="5" data-v="partial">We have some evals but no systematic framework</button>
+            <button class="wizard-option" data-q="5" data-v="scratch">Starting from scratch</button>
+          </div>
+          <div class="wizard-nav">
+            <button class="wizard-btn wizard-btn-back" id="wq5-back">Back</button>
+            <button class="wizard-btn" id="wq5-submit" disabled>See My Level</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Result -->
+      <div class="wizard-result" id="wizard-result">
+        <div id="result-badge-wrap"></div>
+        <div class="result-title" id="result-title"></div>
+        <p class="result-desc" id="result-desc"></p>
+        <div class="result-reads">
+          <span class="result-reads-label">Read These First</span>
+          <ol id="result-reads-list"></ol>
+        </div>
+        <p class="result-next" id="result-next"></p>
+        <div class="wizard-restart">
+          <button class="wizard-btn wizard-btn-back" id="wizard-restart-btn">Start Over</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     HARNESS BUILDER CHECKLIST
+============================================================ -->
+<section class="tool-section" id="harness-builder-tool">
+  <div class="container">
+    <span class="section-number">Tool -- Interactive</span>
+    <h2 class="section-title">Harness Builder Checklist</h2>
+    <span class="section-title-line"></span>
+    <p class="section-intro">
+      Check what your system needs. The right panel updates in real time: which harness patterns apply, what to prioritize, and a summary of your evaluation stack.
+    </p>
+
+    <div id="harness-builder">
+      <div class="builder-header">
+        <div class="builder-title">Harness Builder</div>
+        <div class="builder-subtitle">Check all that apply to your system</div>
+      </div>
+      <div class="builder-body">
+        <div class="builder-checks">
+          <label class="builder-check-item" data-id="factual">
+            <div class="builder-checkbox"><span class="builder-checkbox-mark">&#10003;</span></div>
+            <span class="builder-check-label">Factual accuracy testing</span>
+          </label>
+          <label class="builder-check-item" data-id="safety">
+            <div class="builder-checkbox"><span class="builder-checkbox-mark">&#10003;</span></div>
+            <span class="builder-check-label">Safety and refusal evaluation</span>
+          </label>
+          <label class="builder-check-item" data-id="consistency">
+            <div class="builder-checkbox"><span class="builder-checkbox-mark">&#10003;</span></div>
+            <span class="builder-check-label">Behavioral consistency over time</span>
+          </label>
+          <label class="builder-check-item" data-id="agentic">
+            <div class="builder-checkbox"><span class="builder-checkbox-mark">&#10003;</span></div>
+            <span class="builder-check-label">Multi-turn and agentic evaluation</span>
+          </label>
+          <label class="builder-check-item" data-id="human">
+            <div class="builder-checkbox"><span class="builder-checkbox-mark">&#10003;</span></div>
+            <span class="builder-check-label">Human eval calibration</span>
+          </label>
+          <label class="builder-check-item" data-id="redteam">
+            <div class="builder-checkbox"><span class="builder-checkbox-mark">&#10003;</span></div>
+            <span class="builder-check-label">Red team and adversarial probes</span>
+          </label>
+          <label class="builder-check-item" data-id="latency">
+            <div class="builder-checkbox"><span class="builder-checkbox-mark">&#10003;</span></div>
+            <span class="builder-check-label">Latency and cost tradeoff measurement</span>
+          </label>
+          <label class="builder-check-item" data-id="regression">
+            <div class="builder-checkbox"><span class="builder-checkbox-mark">&#10003;</span></div>
+            <span class="builder-check-label">Regression testing across model updates</span>
+          </label>
+        </div>
+        <div class="builder-result">
+          <span class="builder-result-label">Your Evaluation Stack</span>
+          <div id="builder-output">
+            <p class="builder-empty">Check items on the left to see recommendations.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     FOOTER
+============================================================ -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-author"><a href="https://cyberdaemon.ai" class="footer-link">cyberdaemon.ai</a></div>
+    <p class="footer-disclaimer">
+      cyberdaemon.ai. Views expressed here are the author's own and do not represent any employer.
+      Independent educational resource on AI architecture and security.
+    </p>
+    <div style="display:flex;gap:1.5rem;flex-wrap:wrap;margin-top:0.5rem;">
+      <a href="https://cyberdaemon.ai" class="footer-link" style="font-size:0.75rem;">cyberdaemon.ai</a>
+      <a href="https://identity.cyberdaemon.ai" class="footer-link" style="font-size:0.75rem;color:var(--text-muted);">identity.cyberdaemon.ai</a>
+      <a href="https://cyberdaemon.ai/dira" class="footer-link" style="font-size:0.75rem;color:var(--text-muted);">DIRA</a>
+    </div>
+  </div>
+</footer>
+
+<!-- ============================================================
+     JS: Scroll animations
+============================================================ -->
+<script>
+  (function () {
+    'use strict';
+
+    // Fade-in on scroll
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.07 });
+
+    document.querySelectorAll('.fade-in').forEach(function (el) {
+      observer.observe(el);
+    });
+
+    // Stagger card grids
+    document.querySelectorAll('.card-grid, .benchmark-grid, .fm-grid').forEach(function (grid) {
+      grid.querySelectorAll('.fade-in').forEach(function (card, i) {
+        card.style.transitionDelay = (i * 55) + 'ms';
+      });
+    });
+
+  })();
+</script>
+
+<!-- ============================================================
+     JS: Eval Level Wizard
+============================================================ -->
+<script>
+(function() {
+  'use strict';
+
+  var answers = {};
+  var current = 1;
+  var total = 5;
+
+  function updateDots() {
+    for (var i = 1; i <= total; i++) {
+      var dot = document.getElementById('pd' + i);
+      if (!dot) continue;
+      dot.classList.remove('active', 'done');
+      if (i < current) dot.classList.add('done');
+      else if (i === current) dot.classList.add('active');
+    }
+  }
+
+  function showQ(n) {
+    for (var i = 1; i <= total; i++) {
+      var q = document.getElementById('wq' + i);
+      if (q) q.classList.remove('active');
+    }
+    var target = document.getElementById('wq' + n);
+    if (target) target.classList.add('active');
+    document.getElementById('wizard-result').classList.remove('active');
+    current = n;
+    updateDots();
+  }
+
+  // Option click handlers
+  document.querySelectorAll('.wizard-option').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var q = this.getAttribute('data-q');
+      var v = this.getAttribute('data-v');
+      // deselect others in same question
+      this.closest('.wizard-options').querySelectorAll('.wizard-option').forEach(function(b) {
+        b.classList.remove('selected');
+      });
+      this.classList.add('selected');
+      answers['q' + q] = v;
+      // enable next button
+      var nextBtn = document.getElementById('wq' + q + '-next') || document.getElementById('wq' + q + '-submit');
+      if (nextBtn) nextBtn.disabled = false;
+    });
+  });
+
+  // Next/Back wiring
+  for (var i = 1; i <= total; i++) {
+    (function(n) {
+      var nb = document.getElementById('wq' + n + '-next');
+      if (nb) nb.addEventListener('click', function() { showQ(n + 1); });
+      var bb = document.getElementById('wq' + n + '-back');
+      if (bb) bb.addEventListener('click', function() { showQ(n - 1); });
+    })(i);
+  }
+
+  // Submit
+  var submit = document.getElementById('wq5-submit');
+  if (submit) {
+    submit.addEventListener('click', function() {
+      showResult();
+    });
+  }
+
+  document.getElementById('wizard-restart-btn').addEventListener('click', function() {
+    answers = {};
+    document.querySelectorAll('.wizard-option').forEach(function(b) { b.classList.remove('selected'); });
+    document.querySelectorAll('.wizard-btn').forEach(function(b) {
+      if (b.id && b.id.indexOf('next') > -1 || b.id && b.id.indexOf('submit') > -1) b.disabled = true;
+    });
+    document.getElementById('wizard-result').classList.remove('active');
+    showQ(1);
+  });
+
+  function calcLevel() {
+    var score = 0;
+    // experience
+    if (answers.q2 === 'deep') score += 2;
+    else if (answers.q2 === 'some') score += 1;
+    // agentic
+    if (answers.q3 === 'agentic' || answers.q3 === 'both') score += 2;
+    // consequence
+    if (answers.q4 === 'critical' || answers.q4 === 'high') score += 2;
+    else if (answers.q4 === 'medium') score += 1;
+    // what evaluating
+    if (answers.q1 === 'agent' || answers.q1 === 'safety') score += 1;
+    // existing framework
+    if (answers.q5 === 'existing') score += 1;
+
+    if (score <= 2) return 200;
+    if (score <= 5) return 300;
+    return 400;
+  }
+
+  var results = {
+    200: {
+      title: 'Start at Level 200: Concepts',
+      desc: 'Your current situation calls for getting the fundamentals in place before tackling evaluation frameworks. Focus on understanding what a harness does, why the model is not the product, and how context construction works. Evaluation complexity comes after architecture clarity.',
+      reads: [
+        'Section 01 — What a Harness Is (context construction, tool layer, memory, safety)',
+        'Section 02 — What Is a Frontier Model (terminology, closed vs. open weights)',
+        'Section 08 — Why the Harness Outlasts the Model (where failures actually happen)'
+      ],
+      next: 'When you have the architecture pattern clear, move to Section 03 (VVAH) as a concrete production example, then Section 05 (benchmarks) to understand how to measure what matters.'
+    },
+    300: {
+      title: 'Start at Level 300: Architecture',
+      desc: 'You have enough context to engage with evaluation architectures directly. The VVAH case study gives you a concrete reference for multi-agent pipeline design. Benchmark selection is the next practical decision you will need to make.',
+      reads: [
+        'Section 03 — VVAH (production harness, nine-stage pipeline, adversarial verification)',
+        'Section 05 — Benchmark Saturation (which benchmarks still differentiate)',
+        'Section 07 — The A2A Trust Gap (multi-agent security if you are building pipelines)'
+      ],
+      next: 'When you are ready to go deeper: Section 06 (reasoning models) for routing decisions, then review the harness failure patterns in Section 08 as a pre-production checklist.'
+    },
+    400: {
+      title: 'Start at Level 400: Research Gaps',
+      desc: 'You are building at the edge. The immediately relevant content is the adversarial verification pattern (VVAH S6), the A2A trust gap analysis, and the DIRA behavioral authorization research. The benchmark analysis in Section 05 maps directly to eval harness design decisions.',
+      reads: [
+        'Section 07 — A2A Trust Gap (scope creep, prompt injection, per-hop authorization)',
+        'Section 03 — VVAH S6 specifically (adversarial verification as a reusable pattern)',
+        'Section 05 — Benchmark Saturation (tau-bench and SWE-Bench as harness-in-the-loop signals)'
+      ],
+      next: 'The DIRA research on behavioral authorization is the open frontier here. The pattern generalizes beyond security analysis to any agentic workflow where intent and execution need to match at runtime, not just at credential issuance.'
+    }
+  };
+
+  function showResult() {
+    var level = calcLevel();
+    var r = results[level];
+    var badgeClass = 'level-' + level;
+
+    document.getElementById('result-badge-wrap').innerHTML =
+      '<div class="result-badge ' + badgeClass + '">Level ' + level + '</div>';
+    document.getElementById('result-title').textContent = r.title;
+    document.getElementById('result-desc').textContent = r.desc;
+
+    var ol = document.getElementById('result-reads-list');
+    ol.innerHTML = '';
+    r.reads.forEach(function(item) {
+      var li = document.createElement('li');
+      li.textContent = item;
+      ol.appendChild(li);
+    });
+
+    document.getElementById('result-next').textContent = r.next;
+
+    // hide questions
+    for (var i = 1; i <= total; i++) {
+      var q = document.getElementById('wq' + i);
+      if (q) q.classList.remove('active');
+    }
+    document.getElementById('wizard-result').classList.add('active');
+
+    // mark all dots done
+    for (var j = 1; j <= total; j++) {
+      var d = document.getElementById('pd' + j);
+      if (d) { d.classList.remove('active'); d.classList.add('done'); }
+    }
+  }
+
+  showQ(1);
+})();
+</script>
+
+<!-- ============================================================
+     JS: Harness Builder Checklist
+============================================================ -->
+<script>
+(function() {
+  'use strict';
+
+  var patterns = {
+    factual: {
+      name: 'Factual Accuracy Harness',
+      desc: 'Ground truth dataset + automated correctness scoring. LLM-as-judge for open-ended questions. Track per-domain accuracy, not aggregate numbers.'
+    },
+    safety: {
+      name: 'Safety and Refusal Eval',
+      desc: 'Adversarial prompt suite covering jailbreak vectors, harmful content, and policy violations. Requires both pass/fail scoring and a human review tier for edge cases.'
+    },
+    consistency: {
+      name: 'Behavioral Drift Detection (BDD)',
+      desc: 'Baseline response distribution captured at deploy time. Re-run on a cadence after every model update. Flag statistical drift before users notice it.'
+    },
+    agentic: {
+      name: 'Agentic Eval Framework',
+      desc: 'Multi-turn trajectory evaluation. tau-bench and SWE-bench Verified are the reference benchmarks. Track tool call accuracy, step completion rate, and error recovery behavior.'
+    },
+    human: {
+      name: 'Human Eval Calibration',
+      desc: 'Annotator agreement metrics (Cohen kappa or Krippendorff alpha). Calibrate automated evals against human labels. Without this, automated scores drift from actual quality.'
+    },
+    redteam: {
+      name: 'Adversarial Probe Suite',
+      desc: 'Structured red team runs covering prompt injection, scope escalation, and indirect injection via tool results. Use an independent adversarial model (VVAH S6 pattern) for systematic coverage.'
+    },
+    latency: {
+      name: 'Cost-Latency Profiling',
+      desc: 'Measure p50/p95/p99 latency and per-query cost at each routing tier. Reasoning models are 5-20x more expensive: route only where the accuracy delta justifies it.'
+    },
+    regression: {
+      name: 'Regression Test Suite',
+      desc: 'Pinned test cases that run on every model update. Catch silent regressions before they hit production. This is the single highest-ROI eval investment for mature systems.'
+    }
+  };
+
+  var stackLabels = {
+    factual: 'Factual accuracy harness',
+    safety: 'Safety and refusal eval',
+    consistency: 'BDD baseline + drift alerting',
+    agentic: 'Agentic trajectory evaluation',
+    human: 'Human eval calibration layer',
+    redteam: 'Adversarial probe suite',
+    latency: 'Cost-latency profiling',
+    regression: 'Regression test suite'
+  };
+
+  var checked = {};
+
+  document.querySelectorAll('.builder-check-item').forEach(function(item) {
+    item.addEventListener('click', function() {
+      var id = this.getAttribute('data-id');
+      if (checked[id]) {
+        delete checked[id];
+        this.classList.remove('checked');
+      } else {
+        checked[id] = true;
+        this.classList.add('checked');
+      }
+      render();
+    });
+  });
+
+  function render() {
+    var ids = Object.keys(checked);
+    var out = document.getElementById('builder-output');
+    if (ids.length === 0) {
+      out.innerHTML = '<p class="builder-empty">Check items on the left to see recommendations.</p>';
+      return;
+    }
+
+    var html = '';
+    ids.forEach(function(id) {
+      var p = patterns[id];
+      if (!p) return;
+      html += '<div class="builder-pattern">' +
+        '<div class="builder-pattern-name">' + p.name + '</div>' +
+        '<div class="builder-pattern-desc">' + p.desc + '</div>' +
+        '</div>';
+    });
+
+    // Stack summary card
+    html += '<div class="builder-stack-card">' +
+      '<span class="builder-stack-label">Your Evaluation Stack</span>' +
+      '<ul class="builder-stack-list">';
+    ids.forEach(function(id) {
+      html += '<li><span class="stack-dot"></span>' + stackLabels[id] + '</li>';
+    });
+
+    // Priority note
+    var priority = '';
+    if (checked.regression && ids.length > 2) {
+      priority = 'Start with the regression suite, then add coverage layers in the order checked.';
+    } else if (checked.agentic && checked.redteam) {
+      priority = 'Agentic eval and red team probes interact. Build the agentic trajectory suite first so red team scope is well-defined.';
+    } else if (checked.factual && checked.consistency) {
+      priority = 'Factual accuracy + BDD together cover the most common production failure modes. Build them in parallel.';
+    } else if (ids.length === 1) {
+      priority = 'Single-focus eval is a valid starting point. Add a second dimension once the first is stable.';
+    }
+
+    html += '</ul>';
+    if (priority) {
+      html += '<p style="font-size:0.82rem;color:#c9d3de;margin-top:0.75rem;line-height:1.5;">' + priority + '</p>';
+    }
+    html += '</div>';
+
+    out.innerHTML = html;
+  }
+
+})();
+</script>
+
+</body>
+</html>
