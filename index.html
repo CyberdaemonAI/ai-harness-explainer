@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -13,6 +13,8 @@
   <meta property="og:type" content="article" />
   <meta property="og:url" content="https://cyberdaemon.ai/harness-explainer" />
 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,600;0,8..60,700;1,8..60,600&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
     /* ============================================================
        RESET + BASE
@@ -23,33 +25,85 @@
       padding: 0;
     }
 
-    :root {
-      --bg-base:          #0b0d0f;
-      --bg-surface:       #111418;
-      --bg-card:          #161b20;
-      --bg-card-hover:    #1c2229;
-      --bg-code:          #0e1114;
-      --border:           #1f2730;
-      --border-light:     #2a3540;
-      --accent:           #4a9eff;
-      --accent-dim:       #2a6eb5;
-      --accent-glow:      rgba(74, 158, 255, 0.10);
-      --accent-indigo:    #7c6af7;
-      --accent-green:     #3dba72;
-      --accent-blue:      #3b9de8;
-      --accent-orange:    #e8803b;
-      --text-primary:     #e8edf3;
-      --text-secondary:   #8fa0b2;
-      --text-muted:       #4e5e6e;
-      --text-code:        #a8d4ff;
-      --serif:            Georgia, 'Times New Roman', serif;
-      --sans:             -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      --mono:             'Courier New', Courier, monospace;
+    /* ── D3 LIGHT (default) ── */
+    :root,
+    [data-theme="light"] {
+      --bg-base:          #f9f9fc;
+      --bg-surface:       #f0f0f8;
+      --bg-card:          #f0f0f8;
+      --bg-card-hover:    #e4e4f0;
+      --bg-code:          #f0f0f8;
+      --border:           #cccce0;
+      --border-light:     #b8b8d0;
+      --accent:           #007a60;
+      --accent-dim:       #005c48;
+      --accent-glow:      rgba(0,122,96,0.08);
+      --gold:             #8a6400;
+      --gold-dim:         #fff8e0;
+      --teal:             #007a60;
+      --teal-dim:         #e0f5f0;
+      --accent-indigo:    #4a35c4;
+      --accent-green:     #1a7a44;
+      --accent-blue:      #1a5fa0;
+      --accent-orange:    #b05a10;
+      --text-primary:     #0e0e1a;
+      --text-secondary:   #4a4a6a;
+      --text-muted:       #8888a8;
+      --text-code:        #007a60;
+      --nav-bg:           rgba(249,249,252,0.92);
+      --grid:             rgba(0,122,96,0.04);
+      --serif:            'Source Serif 4', Georgia, 'Times New Roman', serif;
+      --sans:             'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --mono:             'IBM Plex Mono', 'Courier New', monospace;
       --radius:           6px;
       --radius-lg:        12px;
       --max-width:        880px;
       --section-gap:      5.5rem;
     }
+
+    /* ── D3 DARK ── */
+    [data-theme="dark"] {
+      --bg-base:          #0b0d11;
+      --bg-surface:       #111520;
+      --bg-card:          #111520;
+      --bg-card-hover:    #171b28;
+      --bg-code:          #080a10;
+      --border:           #1e2230;
+      --border-light:     #282d40;
+      --accent:           #00c8a0;
+      --accent-dim:       #008a6e;
+      --accent-glow:      rgba(0,200,160,0.08);
+      --gold:             #c9a84c;
+      --gold-dim:         #1e1400;
+      --teal:             #00c8a0;
+      --teal-dim:         #041e18;
+      --accent-indigo:    #7c6af7;
+      --accent-green:     #3dba72;
+      --accent-blue:      #3b9de8;
+      --accent-orange:    #e8803b;
+      --text-primary:     #e0ddef;
+      --text-secondary:   #8a8aaa;
+      --text-muted:       #54546e;
+      --text-code:        #00c8a0;
+      --nav-bg:           rgba(11,13,17,0.92);
+      --grid:             rgba(0,200,160,0.025);
+    }
+
+    /* ── THEME TOGGLE ── */
+    .theme-toggle {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
 
     html {
       scroll-behavior: smooth;
@@ -57,12 +111,17 @@
 
     body {
       background-color: var(--bg-base);
+      background-image:
+        linear-gradient(var(--grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+      background-size: 40px 40px;
       color: var(--text-primary);
       font-family: var(--sans);
       font-size: 16px;
       line-height: 1.75;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
+      transition: background 0.2s, color 0.2s;
     }
 
     /* ============================================================
@@ -175,7 +234,7 @@
       position: sticky;
       top: 0;
       z-index: 100;
-      background: rgba(11, 13, 15, 0.92);
+      background: var(--nav-bg);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
       border-bottom: 1px solid var(--border);
@@ -259,8 +318,8 @@
       right: 0;
       bottom: 0;
       background:
-        radial-gradient(ellipse 60% 50% at 50% 30%, rgba(74, 158, 255, 0.07) 0%, transparent 70%),
-        radial-gradient(ellipse 40% 30% at 80% 70%, rgba(124, 106, 247, 0.04) 0%, transparent 60%);
+        radial-gradient(ellipse 60% 50% at 50% 30%, var(--accent-glow) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 30% at 80% 70%, transparent 0%, transparent 60%);
       pointer-events: none;
     }
 
@@ -319,7 +378,7 @@
       font-size: 0.72rem;
       color: var(--accent);
       background: transparent;
-      border: 1px solid rgba(74, 158, 255, 0.4);
+      border: 1px solid var(--border-light);
       border-radius: 20px;
       padding: 0.2rem 0.75rem;
       letter-spacing: 0.04em;
@@ -416,7 +475,7 @@
       font-size: 0.69rem;
       color: var(--accent);
       background: var(--accent-glow);
-      border: 1px solid rgba(74, 158, 255, 0.2);
+      border: 1px solid var(--border-light);
       border-radius: 3px;
       padding: 0.15em 0.5em;
     }
@@ -516,7 +575,7 @@
     .stage-badge.highlight {
       border-color: var(--accent);
       background: var(--accent-glow);
-      box-shadow: 0 0 0 4px rgba(74, 158, 255, 0.08);
+      box-shadow: 0 0 0 4px var(--accent-glow);
     }
 
     .stage-line {
@@ -536,9 +595,9 @@
     }
 
     .stage-right.highlight {
-      border-color: rgba(74, 158, 255, 0.35);
-      background: rgba(74, 158, 255, 0.06);
-      box-shadow: inset 0 0 0 1px rgba(74, 158, 255, 0.12);
+      border-color: var(--border-light);
+      background: var(--accent-glow);
+      box-shadow: inset 0 0 0 1px var(--accent-glow);
     }
 
     .stage-name {
@@ -658,7 +717,7 @@
       font-size: 0.67rem;
       color: var(--accent);
       background: var(--accent-glow);
-      border: 1px solid rgba(74, 158, 255, 0.22);
+      border: 1px solid var(--border);
       border-radius: 3px;
       padding: 0.1em 0.45em;
     }
@@ -944,18 +1003,18 @@
     /* ============================================================
        BODY TEXT COLOR FIX
     ============================================================ */
-    body { color: #e6edf3; }
-    p { color: #e6edf3; }
-    li { color: #e6edf3; }
-    .section-intro { color: #c9d3de; }
-    .stage-desc { color: #c9d3de; }
-    .card-body { color: #c9d3de; }
-    .card-body p { color: #c9d3de; }
-    .benchmark-desc { color: #c9d3de; }
-    .fm-card-body { color: #c9d3de; }
-    .compare-card ul { color: #c9d3de; }
-    .stat-label { color: #c9d3de; }
-    .arch-note { color: #c9d3de; }
+    body { color: var(--text-primary); }
+    p { color: var(--text-secondary); }
+    li { color: var(--text-secondary); }
+    .section-intro { color: var(--text-secondary); }
+    .stage-desc { color: var(--text-secondary); }
+    .card-body { color: var(--text-secondary); }
+    .card-body p { color: var(--text-secondary); }
+    .benchmark-desc { color: var(--text-secondary); }
+    .fm-card-body { color: var(--text-secondary); }
+    .compare-card ul { color: var(--text-secondary); }
+    .stat-label { color: var(--text-secondary); }
+    .arch-note { color: var(--text-secondary); }
 
     /* ============================================================
        SVG DIAGRAMS
@@ -1017,7 +1076,7 @@
     .tool-section {
       padding: var(--section-gap) 0;
       border-top: 1px solid var(--border);
-      background: linear-gradient(180deg, rgba(74,158,255,0.03) 0%, transparent 60%);
+      background: linear-gradient(180deg, var(--accent-glow) 0%, transparent 60%);
     }
 
     .tool-section .container {
@@ -1119,7 +1178,7 @@
       border-radius: var(--radius);
       padding: 0.85rem 1.15rem;
       font-size: 0.9rem;
-      color: #e6edf3;
+      color: var(--text-primary);
       cursor: pointer;
       text-align: left;
       transition: border-color 0.15s, background 0.15s;
@@ -1133,7 +1192,7 @@
 
     .wizard-option.selected {
       border-color: var(--accent);
-      background: rgba(74,158,255,0.08);
+      background: var(--accent-glow);
       color: var(--text-primary);
     }
 
@@ -1160,7 +1219,7 @@
 
     .wizard-btn:hover {
       background: var(--accent);
-      color: #0b0d0f;
+      color: var(--bg-base);
     }
 
     .wizard-btn:disabled {
@@ -1216,7 +1275,7 @@
 
     .result-desc {
       font-size: 0.9rem;
-      color: #c9d3de;
+      color: var(--text-secondary);
       margin-bottom: 1.25rem;
       line-height: 1.65;
     }
@@ -1240,19 +1299,19 @@
     }
 
     .result-reads ol {
-      color: #e6edf3;
+      color: var(--text-primary);
       font-size: 0.87rem;
       padding-left: 1.25rem;
     }
 
     .result-reads li {
       margin-bottom: 0.3rem;
-      color: #e6edf3;
+      color: var(--text-primary);
     }
 
     .result-next {
       font-size: 0.85rem;
-      color: #c9d3de;
+      color: var(--text-secondary);
       border-left: 2px solid var(--border-light);
       padding-left: 1rem;
     }
@@ -1343,7 +1402,7 @@
 
     .builder-checkbox-mark {
       display: none;
-      color: #0b0d0f;
+      color: var(--bg-base);
       font-size: 0.7rem;
       font-weight: 700;
       line-height: 1;
@@ -1355,7 +1414,7 @@
 
     .builder-check-label {
       font-size: 0.88rem;
-      color: #e6edf3;
+      color: var(--text-primary);
       line-height: 1.45;
     }
 
@@ -1395,15 +1454,15 @@
     }
 
     .builder-pattern-desc {
-      color: #c9d3de;
+      color: var(--text-secondary);
       font-size: 0.82rem;
       line-height: 1.5;
     }
 
     .builder-stack-card {
       margin-top: 1.25rem;
-      background: rgba(74,158,255,0.06);
-      border: 1px solid rgba(74,158,255,0.25);
+      background: var(--accent-glow);
+      border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 1rem 1.25rem;
     }
@@ -1425,9 +1484,9 @@
 
     .builder-stack-list li {
       font-size: 0.84rem;
-      color: #e6edf3;
+      color: var(--text-primary);
       padding: 0.25rem 0;
-      border-bottom: 1px solid rgba(74,158,255,0.12);
+      border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
       gap: 0.5rem;
@@ -1504,6 +1563,7 @@
       <li><a href="https://identity.cyberdaemon.ai">identity</a></li>
       <li><a href="https://cyberdaemon.ai/dira">DIRA</a></li>
     </ul>
+    <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">Light</button>
   </div>
 </nav>
 
@@ -3028,6 +3088,24 @@
   }
 
 })();
+</script>
+
+<script>
+  (function () {
+    var btn = document.getElementById('theme-toggle');
+    var html = document.documentElement;
+    function applyTheme(t) {
+      html.setAttribute('data-theme', t);
+      btn.textContent = t === 'light' ? 'Light' : 'Dark';
+    }
+    var saved = localStorage.getItem('cd-theme') || 'light';
+    applyTheme(saved);
+    btn.addEventListener('click', function () {
+      var next = html.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      applyTheme(next);
+      localStorage.setItem('cd-theme', next);
+    });
+  }());
 </script>
 
 </body>
